@@ -1,5 +1,7 @@
 # 随行交付台（delivery-bench）
 
+[![ci](https://github.com/renyiLi/way-mate/actions/workflows/ci.yml/badge.svg)](https://github.com/renyiLi/way-mate/actions/workflows/ci.yml)
+
 以**可执行验收契约**为中心的多模型协作软件交付工作台。
 
 核心主张：模型是可替换的工人，**契约是不可替换的裁判**。
@@ -21,7 +23,7 @@
 ## 快速开始
 
 ```powershell
-python -m pip install pyyaml ruff pytest
+python -m pip install -r requirements-dev.txt
 
 # 1. 先测闸门（不花钱）
 python -m pytest -q
