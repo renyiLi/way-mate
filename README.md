@@ -2,7 +2,9 @@
 
 [![ci](https://github.com/renyiLi/way-mate/actions/workflows/ci.yml/badge.svg)](https://github.com/renyiLi/way-mate/actions/workflows/ci.yml)
 
-以**可执行验收契约**为中心的多模型协作软件交付工作台。
+以**可执行验收契约**为中心的多角色协作代码交付系统。
+
+毕业设计课题：《基于可执行验收契约的多角色协作代码交付系统设计与实现》
 
 核心主张：模型是可替换的工人，**契约是不可替换的裁判**。
 模型之间可以争论，但只有闸门能宣布交付成立。
