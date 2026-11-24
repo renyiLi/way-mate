@@ -66,6 +66,22 @@ DeepSeek 官方端点**不支持** `json_schema`，只能走 `json_object` 降�
 一条不可越过的边界：**成长只能改变"怎么干活"，不能改变"什么算干完"。**
 系统若有权改验收标准，闸门就从客观裁判退化成自证。
 
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml)：`ruff check` + 30 条离线测试，矩阵 Python 3.10 / 3.11。
+依赖版本钉在 `requirements-dev.txt`，本机与 CI 一致；**不做格式门禁**（不引入 black）。
+
+> **私有仓库注意**：Actions 会消耗账号额度。若账号账单异常，job 不会启动，会报
+> `The job was not started because recent account payments have failed...`。
+> public 仓库的 standard runner 不限额；否则需在 Settings → Billing 补齐支付方式。
+
+本地等价检查：
+
+```powershell
+ruff check src scripts tests
+python -m pytest -q
+```
+
 ## 核心设计：座位固定，人数可变
 
 接口数量 ≠ 流程数量。三个座位是固定的，模型数量只决定"一个模型能不能兼两个座位"：
