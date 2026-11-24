@@ -1,0 +1,18 @@
+# 运行时产物
+.work/
+runs/
+
+# 凭据（绝不入库）
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# 权限修复留下的回滚脚本（本机临时）
+acl-recovery/

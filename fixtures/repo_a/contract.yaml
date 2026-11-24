@@ -1,0 +1,26 @@
+task_id: fix-parser-inline-comment
+repo: .
+
+doD:
+  tests:
+    - cmd: pytest tests/test_parser.py -q
+      timeout_s: 120
+
+  lint:
+    tool: ruff
+    max_new: 0
+
+  api:
+    frozen:
+      - pkg.parser.parse_kv
+
+  diff:
+    max_files: 5
+    max_lines: 120
+    forbid:
+      - tests/
+
+loop:
+  repair_rounds: 3
+  stop_on: all_green
+  on_exhausted: escalate_to_human
