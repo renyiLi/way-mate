@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..contract import Contract
+from ..exact import render_exact_block
 from ..gates import GateReport, GateResult
 from .base import PayloadError
 
@@ -286,7 +287,8 @@ class AuthoringInterface:
     name = "authoring"
 
     def system_prompt(self, contract: Contract) -> str:
-        return (
+        block = render_exact_block(contract.exact)
+        base = (
             "你是一名实现工程师，目标是用最小改动让契约通过。\n"
             "你只输出一个 JSON 对象，形如 "
             '{"files": {"相对路径": "该文件的完整新内容"}, "rationale": "为什么这样改"}。\n'
@@ -297,6 +299,7 @@ class AuthoringInterface:
             "- 不确定时选择更小的改动；\n"
             "- 只输出 JSON。"
         )
+        return f"{base}\n\n{block}" if block else base
 
     def propose_schema(self) -> dict[str, Any]:
         return {
@@ -358,7 +361,9 @@ class ReviewInterface:
 
     def system_prompt(self, contract: Contract) -> str:
         contract_dump = json.dumps(contract.to_dict()["doD"], ensure_ascii=False)
-        return f"你是一名验收审计员，只按契约办事。\n当前契约的验收条件：{contract_dump}\n\n{CRITIQUE_RULES}"
+        block = render_exact_block(contract.exact)
+        head = f"你是一名验收审计员，只按契约办事。\n当前契约的验收条件：{contract_dump}"
+        return f"{head}\n\n{block}\n\n{CRITIQUE_RULES}" if block else f"{head}\n\n{CRITIQUE_RULES}"
 
     def propose_schema(self) -> dict[str, Any]:
         return FINDINGS_SCHEMA

@@ -36,6 +36,10 @@ jobs:
       - name: 静态检查（ruff）
         run: ruff check src scripts tests
 
+      # 契约里的 exact 段与测试断言不得漂移
+      - name: 契约一致性检查
+        run: python scripts/extract_exact.py --check
+
       # 30 条测试全部用脚本化假适配器，不需要任何 API Key
       - name: 单元测试（离线）
         run: python -m pytest -q

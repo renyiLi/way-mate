@@ -14,6 +14,13 @@ doD:
     frozen:
       - pkg.parser.parse_kv
 
+  # 从 tests/test_parser.py 的 pytest.raises(match=...) 提取，人工确认后写入
+  exact:
+    - exception: ValueError
+      contains: "missing '='"
+      source: "tests/test_parser.py:25"
+      origin: auto
+
   diff:
     max_files: 5
     max_lines: 120

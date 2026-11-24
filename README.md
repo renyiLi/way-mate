@@ -113,7 +113,41 @@ python -m pytest -q
 
 接口的"分内协议"= 输出模式 + 不变量 + 禁止事项，不是流程。
 
-## 契约示例
+## 精确断言：把测试里的硬约束提上来
+
+`pytest.raises(ValueError, match="missing '='")` 里的字符串，模型原本只能从 25 行 traceback 里揣摩，
+于是把消息"优化"得更好读，测试就红了。
+
+`exact` 把它提取进契约，写作与复核两个座位都能直接看到：
+
+```yaml
+exact:
+  - exception: ValueError
+    contains: "missing '='"
+    source: "tests/test_parser.py:25"
+    origin: auto      # auto=自动提取，manual=人工写
+```
+
+- 自动提取：`python scripts/extract_exact.py`（AST 扫 `pytest.raises(match=...)`）
+- 防漂移：`python scripts/extract_exact.py --check`（已接入 CI）
+- `match` 是正则，含元字符的不收——宁可少收，不可错收
+
+### 对照实验（n=3，单任务 fixture）
+
+| 模型 | 无 exact | 有 exact | 平均 token | 平均耗时 |
+|---|---|---|---|---|
+| `deepseek-chat` | 0/3 | **3/3** | 999 → 1046 | 1.8s → 2.3s |
+| `deepseek-v4-1-flash` | 3/3 | 3/3 | 2207 → 2030 | 8.3s → 6.3s |
+| `kimi-k3-1-pro` | 3/3 | 3/3 | 5513 → **2308（−58%）** | 110.4s → **46.0s** |
+
+三个结论：
+
+1. **救回**：`deepseek-chat` 从 3 次全红变成 3 次全绿，效应稳定；
+2. **省成本**：`kimi` 两条件都通过，但 token 省 58%、耗时省 58%——它不再需要"猜"消息该写什么；
+3. **天花效应**：另外两个模型两条件都 3/3，说明这个 fixture 对它们太简单，**单任务无法区分条件**。
+
+> 第 3 条是方法论教训：n=1 时我看到的"4/4 相关"里有大量噪声。
+> 第 6 章的实验必须**难度分层**且**每格 ≥3 次**，否则结论站不住。
 
 ```yaml
 task_id: fix-parser-inline-comment

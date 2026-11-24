@@ -13,6 +13,8 @@ from typing import Any
 
 import yaml
 
+from .exact import ExactError, ExactSpec
+
 
 class ContractError(ValueError):
     """契约文件不合法。错误信息里带字段路径，便于直接定位。"""
@@ -69,6 +71,7 @@ class Contract:
     diff: DiffSpec
     loop: LoopSpec
     source: Path
+    exact: tuple[ExactSpec, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -83,6 +86,7 @@ class Contract:
                     "max_lines": self.diff.max_lines,
                     "forbid": list(self.diff.forbid),
                 },
+                "exact": [spec.to_dict() for spec in self.exact],
             },
             "loop": {
                 "repair_rounds": self.loop.repair_rounds,
@@ -95,7 +99,7 @@ class Contract:
 # ---------------------------------------------------------------- 校验工具
 
 _TOP_KEYS = {"task_id", "repo", "doD", "loop"}
-_DOD_KEYS = {"tests", "lint", "api", "diff"}
+_DOD_KEYS = {"tests", "lint", "api", "diff", "exact"}
 _LINT_KEYS = {"tool", "max_new"}
 _API_KEYS = {"frozen"}
 _DIFF_KEYS = {"max_files", "max_lines", "forbid"}
@@ -206,6 +210,19 @@ def load_contract(path: str | Path) -> Contract:
         forbid=_opt_str_list(diff_raw, "forbid", "doD.diff"),
     )
 
+    exact_raw = dod.get("exact") or []
+    if not isinstance(exact_raw, list):
+        raise ContractError("doD.exact 必须是列表")
+    exact_specs: list[ExactSpec] = []
+    for index, item in enumerate(exact_raw):
+        where = f"doD.exact[{index}]"
+        entry = _mapping(item, where)
+        _strict_keys(entry, {"exception", "contains", "source", "origin"}, where)
+        try:
+            exact_specs.append(ExactSpec.from_dict(entry))
+        except ExactError as exc:
+            raise ContractError(f"{where}: {exc}") from exc
+
     loop_raw = _mapping(data.get("loop", {}), "loop")
     _strict_keys(loop_raw, _LOOP_KEYS, "loop")
     loop = LoopSpec(
@@ -223,4 +240,5 @@ def load_contract(path: str | Path) -> Contract:
         diff=diff,
         loop=loop,
         source=source,
+        exact=tuple(exact_specs),
     )
