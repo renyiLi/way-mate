@@ -257,13 +257,18 @@ class ProtocolRunner:
                 self._finish(Outcome.ESCALATED, f"连续 {stalled} 轮闸门结果无变化，提前终止以免无效消耗")
                 return
 
-            self._feedback = [
-                f"第 {attempt} 轮未通过，未通过的闸门：",
-                *[f"- {r.name}: {r.detail}" for r in report.failures],
-            ]
+            # 反馈必须带失败明细：只说"失败 1 条"，下一轮等于让模型盲猜
+            lines = [f"第 {attempt} 轮未通过，未通过的闸门："]
+            for result in report.failures:
+                lines.append(f"- {result.name}: {result.detail}")
+                tail = (result.metrics or {}).get("tail")
+                if tail:
+                    lines.append("  最近输出：")
+                    lines.extend(f"    {row}" for row in str(tail).splitlines()[-12:])
             if blockers:
-                self._feedback.append("复核提出的阻断问题：")
-                self._feedback.extend(f"- [{b.gate}] {b.claim}" for b in blockers)
+                lines.append("复核提出的阻断问题：")
+                lines.extend(f"- [{b.gate}] {b.claim}" for b in blockers)
+            self._feedback = lines
 
         self._finish(Outcome.ESCALATED, f"{self.max_attempts} 轮内未能全绿，交人工处理")
 

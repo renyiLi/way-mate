@@ -103,6 +103,12 @@ def apply_patch(repo: Path, patch: Patch) -> None:
         target.write_text(content, encoding="utf-8")
 
 
+def reset_workspace(repo: Path) -> None:
+    """把工作区恢复到基线提交，丢掉上一轮的补丁与新增文件。"""
+    _git(repo, "checkout", "--", ".")
+    _git(repo, "clean", "-fdq")
+
+
 def strip_exact_section(contract_path: Path) -> None:
     """实验用：把 exact 段从**工作区副本**里摘掉，其余完全不变。
 
