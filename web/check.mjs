@@ -11,8 +11,9 @@
  */
 
 import { createServer } from "node:http";
-import { readFile, stat, mkdtemp, rm } from "node:fs/promises";
-import { spawn } from "node:child_process";
+import { readFile, stat, mkdtemp, rm, cp, mkdir, writeFile } from "node:fs/promises";
+import { spawn, execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, extname, resolve, dirname } from "node:path";
@@ -33,8 +34,18 @@ const MIME = {
   ".md": "text/markdown; charset=utf-8"
 };
 
-function findChrome() {
-  if (process.env.CHROME_PATH && existsSync(process.env.CHROME_PATH)) return process.env.CHROME_PATH;
+const execFileAsync = promisify(execFile);
+
+async function runPython(args) {
+  try {
+    const { stdout, stderr } = await execFileAsync(process.env.PYTHON || "python", args, { cwd: ROOT });
+    return { code: 0, stdout, stderr };
+  } catch (error) {
+    return { code: error.code || 1, stdout: error.stdout || "", stderr: error.stderr || String(error) };
+  }
+}
+
+function findChrome() {  if (process.env.CHROME_PATH && existsSync(process.env.CHROME_PATH)) return process.env.CHROME_PATH;
   const candidates = [
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
     "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
@@ -347,6 +358,56 @@ async function main() {
         return value.files > 0 && value.name && value.name.indexOf(run.file) !== -1
           ? [true, `files=${value.files} rationale=${value.rationale}`]
           : [false, JSON.stringify(value)];
+      }],
+
+      ["数据构建：新字段生效与降级补丁", async () => {
+        const tmp = await mkdtemp(join(tmpdir(), "dbw-build-"));
+        const taskDir = join(tmp, "tasks", "tabulate-366");
+        await mkdir(taskDir, { recursive: true });
+        await mkdir(join(tmp, "runs", "patches"), { recursive: true });
+        for (const name of ["task.json", "contract.yaml"]) {
+          await cp(join(ROOT, "tasks", "tabulate-366", name), join(taskDir, name));
+        }
+
+        const missingRun = "20260101T000000-aaaaaa";
+        const patchedRun = "20260101T000100-bbbbbb";
+        const events = [
+          { ts: "2026-01-01T00:00:00+08:00", run_id: missingRun, event: "run_start", task_id: "tabulate-366", provider: "deepseek", model: "deepseek-chat" },
+          { ts: "2026-01-01T00:00:02+08:00", run_id: missingRun, event: "run_end", outcome: "accepted", tokens: 555, calls: 3, duration_ms: 1234, patch_path: "runs/patches/" + missingRun + ".json" },
+          { ts: "2026-01-01T00:01:00+08:00", run_id: patchedRun, event: "run_start", task_id: "tabulate-366", provider: "deepseek", model: "deepseek-chat" },
+          { ts: "2026-01-01T00:01:00+08:00", run_id: patchedRun, event: "run_end", outcome: "accepted", tokens: 1, calls: 1, duration_ms: 2, patch_path: "runs/patches/" + patchedRun + ".json" }
+        ];
+        await writeFile(join(tmp, "runs", "audit.jsonl"), events.map((item) => JSON.stringify(item)).join("\n") + "\n", "utf8");
+        await writeFile(
+          join(tmp, "runs", "patches", patchedRun + ".json"),
+          JSON.stringify({ run_id: patchedRun, files: { "big.py": "x".repeat(40000) }, rationale: "合成补丁" }),
+          "utf8"
+        );
+
+        const build = await runPython(["web/build-data.py", "--root", tmp, "--out", join(tmp, "web", "data")]);
+        if (build.code !== 0) {
+          await rm(tmp, { recursive: true, force: true });
+          return [false, "build-data 失败: " + String(build.stderr).slice(0, 160)];
+        }
+        const data = JSON.parse(await readFile(join(tmp, "web", "data", "site.json"), "utf8"));
+        const missing = data.runs.find((run) => run.run_id === missingRun) || {};
+        const patched = data.runs.find((run) => run.run_id === patchedRun) || {};
+
+        const checks = {
+          duration_ms: missing.duration_ms === 1234,
+          tokens: missing.tokens === 555,
+          calls: missing.calls === 3,
+          task_id: missing.task_id === "tabulate-366",
+          degraded: Boolean(missing.patch) && missing.patch.available === false,
+          degradedPath: Boolean(missing.patch) && String(missing.patch.path).indexOf(missingRun) !== -1,
+          readable: Boolean(patched.patch) && patched.patch.available === true,
+          truncated: Boolean(patched.patch) && patched.patch.truncated === true &&
+            patched.patch.files[0].content.length === 30000
+        };
+        await rm(tmp, { recursive: true, force: true });
+
+        const bad = Object.keys(checks).filter((key) => !checks[key]);
+        return bad.length ? [false, "失败项: " + bad.join(", ")] : [true, Object.keys(checks).length + " 项断言"];
       }],
 
       ["缺失补丁文件不崩", async () => {

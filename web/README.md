@@ -44,7 +44,13 @@ CHROME_PATH=/path/to/chrome node web/check.mjs
 ```
 
 覆盖：概览数字、任务详情与时间轴、运行列表筛选与搜索、键盘（`/`、`↑↓`、`End`）、
-运行详情闸门与时间线、运行对比、CSV 导出、**缺失补丁文件不崩**、打印媒体、未捕获异常。
+运行详情闸门与时间线、运行对比、CSV 导出、补丁可读、**数据构建（新字段 + 降级补丁）**、
+缺失补丁文件不崩、打印媒体、未捕获异常。
+
+「数据构建」这条不是跑浏览器：它在临时目录里造一份最小 `tasks/` + `audit.jsonl`（含
+`duration_ms`、`tokens`、`calls`，以及一条 `patch_path` 指向不存在文件的 run），
+真的执行 `python web/build-data.py --root <tmp>`，再断言产物——
+所以它验的是构建脚本里「新字段优先、缺文件降级」的代码路径，不是页面 fixture。
 
 fixture 是把真实 `site.json` 改一处再注入 `index.html`（替换 `data/site.js`），
 所以能测"patch_path 指向的文件不存在"这类在真实数据里不好等到的状态。
