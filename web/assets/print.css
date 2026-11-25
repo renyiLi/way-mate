@@ -36,7 +36,8 @@ body::after { display: none !important; }   /* 纸纹不进纸 */
 .task-runs,
 .board-meta,
 .contract,
-.replay-hint {
+.replay-hint,
+.runs-headline .btn {
   display: none !important;
 }
 

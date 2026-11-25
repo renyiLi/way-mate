@@ -436,6 +436,47 @@
     );
   }
 
+  function modelStats(runs) {
+    const groups = new Map();
+    runs.forEach((run) => {
+      const key = modelLabel(run);
+      const group = groups.get(key) || { label: key, total: 0, accepted: 0, tokens: 0, tokenRuns: 0, ms: 0, msRuns: 0 };
+      group.total += 1;
+      if (run.outcome === "accepted") group.accepted += 1;
+      if (typeof run.tokens === "number") {
+        group.tokens += run.tokens;
+        group.tokenRuns += 1;
+      }
+      if (typeof run.duration_ms === "number") {
+        group.ms += run.duration_ms;
+        group.msRuns += 1;
+      }
+      groups.set(key, group);
+    });
+    return Array.from(groups.values()).sort((x, y) => y.total - x.total || x.label.localeCompare(y.label));
+  }
+
+  function modelTable(stats) {
+    return (
+      '<div class="table-scroll"><table class="runs model-table">' +
+      '<caption class="sr-only">这个任务上各模型的表现</caption>' +
+      '<thead><tr><th scope="col">模型</th><th scope="col" class="num">运行</th><th scope="col" class="num">成立</th>' +
+      '<th scope="col" class="num">平均 token</th><th scope="col" class="num">平均耗时</th></tr></thead><tbody>' +
+      stats
+        .map(
+          (group) =>
+            '<tr><td class="mono">' + esc(group.label) + "</td>" +
+            '<td class="num">' + group.total + "</td>" +
+            '<td class="num">' + group.accepted + "</td>" +
+            '<td class="num">' + (group.tokenRuns ? fmtNum(Math.round(group.tokens / group.tokenRuns)) : "—") + "</td>" +
+            '<td class="num">' + (group.msRuns ? esc(fmtDuration(Math.round(group.ms / group.msRuns))) : "—") + "</td>" +
+            "</tr>"
+        )
+        .join("") +
+      "</tbody></table></div>"
+    );
+  }
+
   function viewTask(id) {
     const task = DATA.tasks.find((item) => item.id === id);
     if (!task) {
@@ -448,6 +489,7 @@
     }
     const related = DATA.runs.filter((run) => run.task_id === task.id);
     const runs = task.runs || { total: 0, accepted: 0, rejected: 0 };
+    const stats = modelStats(related);
 
     return (
       '<section class="band">' +
@@ -473,6 +515,9 @@
         caption: task.id + " 的运行记录",
         empty: "这个任务还没有运行记录。"
       }) +
+      (stats.length
+        ? '<h3 class="sub-title">按模型 <span class="count">' + stats.length + "</span></h3>" + modelTable(stats)
+        : "") +
       '<p class="runs-note">' + runs.accepted + " 次交付成立 · " + runs.rejected + " 次驳回 · " + runs.unknown + " 次未记录</p>" +
       "</div></div></section>"
     );
@@ -556,7 +601,10 @@
       "<kbd>/</kbd></label>" +
       filterButtons(s, outcome) +
       "</div>" +
+      '<div class="runs-headline">' +
       '<p class="runs-count">' + runsCountText(list, q, outcome) + "</p>" +
+      '<button class="btn btn-ghost btn-small" id="export-csv" type="button">导出 CSV</button>' +
+      "</div>" +
       '<div id="runs-view-body">' + runsTable(list, { caption: "筛选后的运行记录", empty: "这个筛选下没有记录。" }) + "</div>" +
       "</div></div></section>"
     );
@@ -699,6 +747,7 @@
       );
     }
     const meta = outcomeMeta(run.outcome);
+    const previous = previousRunFor(run);
     const kv = [
       ["任务", run.task_id ? '<a href="#/tasks/' + encodeURIComponent(run.task_id) + '">' + esc(run.task_id) + "</a>" : "—"],
       ["结果", run.outcome ? '<i class="dot ' + meta.dot + '"></i>' + meta.label : '<span class="muted">未记录</span>'],
@@ -723,6 +772,11 @@
       '<dl class="kv">' +
       kv.map(([key, value]) => "<div><dt>" + key + "</dt><dd>" + value + "</dd></div>").join("") +
       "</dl>" +
+      (previous
+        ? '<p class="compare-link"><a class="link-more" href="#/runs/compare?a=' +
+          encodeURIComponent(previous.run_id) + "&b=" + encodeURIComponent(run.run_id) +
+          '">与上一次同任务运行对比（' + esc(fmtTime(previous.started_at)) + "）</a></p>"
+        : "") +
       '<h3 class="sub-title">闸门判定</h3>' +
       (run.gate
         ? '<p class="gate-verdict ' + (run.gate.all_green ? "is-pass" : "is-fail") + '">' +
@@ -736,6 +790,179 @@
     );
   }
 
+  /* ---------------- 视图：对比 ---------------- */
+
+  function previousRunFor(run) {
+    const index = DATA.runs.findIndex((item) => item.run_id === run.run_id);
+    for (let i = index + 1; i < DATA.runs.length; i += 1) {
+      if (DATA.runs[i].task_id === run.task_id && DATA.runs[i].run_id !== run.run_id) {
+        return DATA.runs[i];
+      }
+    }
+    return null;
+  }
+
+  function gateOf(run, name) {
+    if (!run.gate) return null;
+    return run.gate.results.find((item) => item.name === name) || null;
+  }
+
+  function gateCell(run, name) {
+    const item = gateOf(run, name);
+    if (!item) return '<span class="muted">—</span>';
+    return '<i class="dot ' + (item.ok ? "dot-pass" : "dot-fail") + '"></i>' + esc(gateValue(item.name, item.metrics));
+  }
+
+  function signedDelta(from, to, formatter) {
+    if (typeof from !== "number" || typeof to !== "number") return "";
+    const diff = to - from;
+    if (!diff) return "持平";
+    return (diff > 0 ? "+" : "−") + formatter(Math.abs(diff));
+  }
+
+  function viewCompare(route) {
+    const a = DATA.runs.find((item) => item.run_id === route.params.get("a"));
+    const b = DATA.runs.find((item) => item.run_id === route.params.get("b"));
+
+    if (!a || !b) {
+      return (
+        '<section class="band"><div class="wrap band-grid"><p class="clause"><span>run</span>对比</p><div class="band-body">' +
+        crumbs([{ label: "概览", href: "#/" }, { label: "运行", href: "#/runs" }, { label: "对比" }]) +
+        notFound("这两次运行", "#/runs") +
+        '<p class="runs-note">对比链接需要 ?a=&lt;run_id&gt; 与 ?b=&lt;run_id&gt; 两个参数。</p>' +
+        "</div></div></section>"
+      );
+    }
+
+    const rows = [];
+    const push = (label, left, right, changed, note) => rows.push({ label, left, right, changed, note });
+    const failCount = (run) => (run.gate ? run.gate.results.filter((item) => !item.ok).length : null);
+
+    push("任务", esc(a.task_id || "—"), esc(b.task_id || "—"), a.task_id !== b.task_id, a.task_id !== b.task_id ? "不同" : "");
+    push(
+      "结果",
+      outcomeCell(a),
+      outcomeCell(b),
+      a.outcome !== b.outcome,
+      a.outcome !== b.outcome ? "不同" : ""
+    );
+    push("模型", esc(modelLabel(a)), esc(modelLabel(b)), modelLabel(a) !== modelLabel(b), modelLabel(a) !== modelLabel(b) ? "不同" : "");
+    push(
+      "协议 / 后端",
+      esc(a.protocol || a.backend || "—"),
+      esc(b.protocol || b.backend || "—"),
+      (a.protocol || a.backend) !== (b.protocol || b.backend),
+      (a.protocol || a.backend) !== (b.protocol || b.backend) ? "不同" : ""
+    );
+    push("token", fmtNum(a.tokens), fmtNum(b.tokens), a.tokens !== b.tokens, signedDelta(a.tokens, b.tokens, (n) => n.toLocaleString("en-US")));
+    push(
+      "调用",
+      a.calls === null || a.calls === undefined ? "—" : esc(a.calls),
+      b.calls === null || b.calls === undefined ? "—" : esc(b.calls),
+      a.calls !== b.calls,
+      signedDelta(a.calls, b.calls, String)
+    );
+    push(
+      "耗时",
+      esc(fmtDuration(a.duration_ms)),
+      esc(fmtDuration(b.duration_ms)),
+      a.duration_ms !== b.duration_ms,
+      signedDelta(a.duration_ms, b.duration_ms, fmtDuration)
+    );
+    GATES.forEach((name) => {
+      const left = gateOf(a, name);
+      const right = gateOf(b, name);
+      push(name, gateCell(a, name), gateCell(b, name), Boolean(left && right) && left.ok !== right.ok, left && right && left.ok !== right.ok ? "不同" : "");
+    });
+
+    const summaryParts = [
+      a.task_id === b.task_id ? "同一任务 " + esc(a.task_id) : "不同任务",
+      "结果 " + outcomeMeta(a.outcome).label + " → " + outcomeMeta(b.outcome).label,
+      "未通过 " + (failCount(a) === null ? "—" : failCount(a)) + " → " + (failCount(b) === null ? "—" : failCount(b))
+    ];
+
+    return (
+      '<section class="band">' +
+      '<div class="wrap band-grid">' +
+      '<p class="clause"><span>run</span>对比</p>' +
+      '<div class="band-body">' +
+      crumbs([{ label: "概览", href: "#/" }, { label: "运行", href: "#/runs" }, { label: "对比" }]) +
+      "<h2>对比两次运行</h2>" +
+      '<p class="lead">同行对照：左列 A、右列 B。结果、模型、闸门判定不同时，「差异」列会标出来。</p>' +
+      '<p class="compare-summary mono">' + summaryParts.join(" · ") + "</p>" +
+      '<div class="compare-actions">' +
+      '<a class="link-more" href="#/runs/' + encodeURIComponent(a.run_id) + '">打开 A · ' + esc(fmtTime(a.started_at)) + "</a>" +
+      '<a class="link-more" href="#/runs/' + encodeURIComponent(b.run_id) + '">打开 B · ' + esc(fmtTime(b.started_at)) + "</a>" +
+      "</div>" +
+      '<div class="table-scroll"><table class="runs compare-table">' +
+      '<caption class="sr-only">两次运行的逐项对比</caption>' +
+      "<thead><tr>" +
+      '<th scope="col">属性</th>' +
+      '<th scope="col"><span class="th-main">A · ' + esc(fmtTime(a.started_at)) + '</span><span class="th-sub">' + esc(a.run_id) + "</span></th>" +
+      '<th scope="col"><span class="th-main">B · ' + esc(fmtTime(b.started_at)) + '</span><span class="th-sub">' + esc(b.run_id) + "</span></th>" +
+      '<th scope="col" class="num">差异</th>' +
+      "</tr></thead><tbody>" +
+      rows
+        .map(
+          (row) =>
+            "<tr" + (row.changed ? ' class="is-diff"' : "") + ">" +
+            "<td>" + esc(row.label) + "</td>" +
+            "<td>" + row.left + "</td>" +
+            "<td>" + row.right + "</td>" +
+            '<td class="num">' + (row.changed ? '<span class="diff-flag">' + esc(row.note || "不同") + "</span>" : '<span class="muted">—</span>') + "</td>" +
+            "</tr>"
+        )
+        .join("") +
+      "</tbody></table></div>" +
+      '<p class="runs-note">对比只读两次运行已有的记录；不重跑、不重算闸门。</p>' +
+      "</div></div></section>"
+    );
+  }
+
+  /* ---------------- 导出 CSV ---------------- */
+
+  function csvCell(value) {
+    const text = value === null || value === undefined ? "" : String(value);
+    return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+  }
+
+  function buildRunsCsv(runs) {
+    const header = [
+      "run_id", "started_at", "ended_at", "task_id", "provider", "model", "protocol", "backend",
+      "outcome", "tokens", "calls", "duration_ms", "all_green", "tests", "lint", "api", "diff"
+    ];
+    const flag = (run, name) => {
+      const item = gateOf(run, name);
+      return item ? (item.ok ? "pass" : "fail") : "";
+    };
+    const lines = [header.join(",")];
+    runs.forEach((run) => {
+      lines.push(
+        [
+          run.run_id, run.started_at, run.ended_at, run.task_id, run.provider, run.model,
+          run.protocol, run.backend, run.outcome, run.tokens, run.calls, run.duration_ms,
+          run.gate ? String(run.gate.all_green) : "",
+          flag(run, "tests"), flag(run, "lint"), flag(run, "api"), flag(run, "diff")
+        ]
+          .map(csvCell)
+          .join(",")
+      );
+    });
+    return lines.join("\r\n") + "\r\n";
+  }
+
+  function downloadCsv(runs) {
+    const blob = new Blob(["\ufeff" + buildRunsCsv(runs)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "runs-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   /* ---------------- 路由 ---------------- */
 
   function parseRoute() {
@@ -746,7 +973,10 @@
     const parts = path.split("/").filter(Boolean).map(decodeURIComponent);
     if (!parts.length) return { name: "home", params };
     if (parts[0] === "tasks") return parts[1] ? { name: "task", id: parts[1], params } : { name: "tasks", params };
-    if (parts[0] === "runs") return parts[1] ? { name: "run", id: parts[1], params } : { name: "runs", params };
+    if (parts[0] === "runs") {
+      if (parts[1] === "compare") return { name: "compare", params };
+      return parts[1] ? { name: "run", id: parts[1], params } : { name: "runs", params };
+    }
     return { name: "home", params };
   }
 
@@ -760,6 +990,8 @@
         return viewRuns(route);
       case "run":
         return viewRun(route.id);
+      case "compare":
+        return viewCompare(route);
       default:
         return "";
     }
@@ -792,6 +1024,13 @@
       mountRunsTools();
       mountRunsKeyboard();
     }
+    const exportBtn = $("#export-csv");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", () => {
+        const current = parseRoute();
+        downloadCsv(filterRuns(current.params.get("q") || "", current.params.get("outcome") || "all"));
+      });
+    }
     mountRowLinks();
   }
 
@@ -816,7 +1055,7 @@
       const on =
         (target === "home" && isHome) ||
         (target === "tasks" && (route.name === "tasks" || route.name === "task")) ||
-        (target === "runs" && (route.name === "runs" || route.name === "run"));
+        (target === "runs" && (route.name === "runs" || route.name === "run" || route.name === "compare"));
       link.classList.toggle("is-active", on);
     });
 

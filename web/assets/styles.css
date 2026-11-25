@@ -761,6 +761,44 @@ table.runs tbody tr.is-hidden { display: none; }
   gap: 12px;
 }
 .runs-note { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.runs-headline {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin: 0 0 12px;
+}
+.runs-headline .runs-count { margin: 0; }
+
+/* ---------- 运行对比 ------------------------------------------------------ */
+
+.compare-summary {
+  margin-top: 16px;
+  font-size: 12px; color: var(--ink-2);
+}
+.compare-actions {
+  display: flex; flex-wrap: wrap; gap: 18px;
+  margin-top: 10px;
+}
+.compare-link { margin-top: 16px; }
+
+.compare-table th { vertical-align: top; }
+.th-main { display: block; }
+.th-sub {
+  display: block;
+  max-width: 220px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--mono); font-weight: 400; font-size: 10px;
+  color: var(--muted);
+}
+.compare-table tbody tr.is-diff td { background: rgba(224, 180, 24, .12); }
+.diff-flag {
+  display: inline-block;
+  font-family: var(--mono); font-size: 11px;
+  padding: 1px 5px;
+  background: var(--hazard);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.model-table td:first-child { font-family: var(--mono); font-size: 12.5px; }
 .btn-small { padding: 8px 14px; font-size: 13px; }
 
 .muted { color: var(--muted); }
