@@ -14,7 +14,8 @@ web/
     site.js           同一份数据包成 window.__DBW_DATA__（页面直接读，file:// 也能用）
   assets/
     styles.css        全部样式，设计规范见 DESIGN.md
-    app.js            渲染逻辑：把数据画成页面
+    print.css         打印样式（media="print"，A4）
+    app.js            渲染逻辑 + hash 路由
     fonts/            自托管的 Archivo / IBM Plex Mono
   preview/            截图
   DESIGN.md           色板、字体、版式、动效档位、Don'ts
@@ -42,6 +43,26 @@ python scripts/serve_web.py   # 起预览；或直接双击 index.html
 | `#/runs/<id>` | 运行详情：元信息、闸门逐项判定、事件时间线 | `runs[].gate`、`runs[].timeline` |
 
 路由不存在时回到概览；`task` / `run` 找不到时给"找不到 + 回列表"的提示，不白屏。
+
+运行列表的状态放在 URL 里，刷新、分享、后退都能还原：
+
+```
+#/runs?outcome=rejected            只看驳回
+#/runs?q=kimi                      关键字：run_id / 任务 / 模型 / 协议 / 后端
+#/runs?q=tabulate&outcome=rejected 两个条件叠加
+```
+
+快捷键（只在运行列表）：`/` 聚焦搜索、`Esc` 清空、`↑↓` 在行间移动、`Enter` 打开、`Home/End` 跳到首末行。
+
+## 打印
+
+`assets/print.css` 以 `media="print"` 加载，不参与屏幕渲染：
+
+- A4，四周 14/12mm；隐藏顶栏、页脚、警示胶带、筛选条与面包屑
+- 保留闸门灯、色条、印章（`print-color-adjust: exact`），否则纸上全是空白格
+- 表格行、闸门行、时间线条目、任务卡都设为 `break-inside: avoid`，不跨页切断
+- 详情页多一行打印页眉：对象 id + 数据快照时间 + 数据源，便于归档引用
+- 开发时想用屏幕看纸上效果：`index.html?print=1#/runs/<run_id>`（把 print.css 临时改成 `media="all"`）
 
 ## 数据从哪来（方案 B）
 
@@ -77,6 +98,7 @@ python scripts/serve_web.py   # 起预览；或直接双击 index.html
 - 没有 `data/site.js`：页面显示"还没有生成数据"+ 生成命令
 - 有数据但 `runs/` 为空（新克隆的仓库）：判定板显示"还没有运行记录"，表格给出跑一次的命令
 - 单个 run 缺 `run_start` / `run_end` / 闸门报告：对应格子显示 `—`，不补零、不推断
+- 筛选无结果：表格里给"换个关键字，或点「全部」"，不显示空表头
 
 ## 约定
 

@@ -138,7 +138,8 @@
       '<th scope="col">闸门</th><th scope="col">结果</th><th scope="col" class="num">token</th><th scope="col" class="num">耗时</th>' +
       "</tr></thead><tbody>" +
       runs.map((run, index) => runRow(run, opts.limit ? index : undefined)).join("") +
-      "</tbody></table></div>"
+      "</tbody></table></div>" +
+      '<p class="scroll-hint">← 横向滑动看完整列 →</p>'
     );
   }
 
@@ -454,6 +455,7 @@
       '<p class="clause"><span>task</span>任务详情</p>' +
       '<div class="band-body">' +
       crumbs([{ label: "概览", href: "#/" }, { label: "任务", href: "#/tasks" }, { label: task.id }]) +
+      '<p class="print-head">随行交付台 · 任务 ' + esc(task.id) + " · 数据快照 " + esc(fmtTime(DATA.generated_from.latest_run_at)) + " · runs/audit.jsonl</p>" +
       "<h2>" + esc(task.title) + "</h2>" +
       '<p class="lead">' + esc(task.statement) + "</p>" +
       '<div class="chips chips-inline">' +
@@ -478,40 +480,145 @@
 
   /* ---------------- 视图：运行 ---------------- */
 
-  function viewRuns() {
+  function filterRuns(q, outcome) {
+    const needle = (q || "").trim().toLowerCase();
+    return DATA.runs.filter((run) => {
+      if (outcome === "unknown") {
+        if (run.outcome) return false;
+      } else if (outcome && outcome !== "all") {
+        if (run.outcome !== outcome) return false;
+      }
+      if (!needle) return true;
+      const haystack = [run.run_id, run.task_id, run.model, run.provider, run.protocol, run.backend, run.outcome]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.indexOf(needle) !== -1;
+    });
+  }
+
+  function runsHash(q, outcome) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (outcome && outcome !== "all") params.set("outcome", outcome);
+    const qs = params.toString();
+    return "#/runs" + (qs ? "?" + qs : "");
+  }
+
+  function runsCountText(list, q, outcome) {
+    const filtered = Boolean(q) || (outcome && outcome !== "all");
+    if (!filtered) {
+      return "共 " + DATA.runs.length + " 次 · " + DATA.summary.runs_with_gate + " 次带闸门判定";
+    }
+    const parts = ["筛出 " + list.length + " 次 / 共 " + DATA.runs.length + " 次"];
+    if (q) parts.push("关键字「" + q + "」");
+    if (outcome && outcome !== "all") {
+      parts.push("结果 " + (outcome === "unknown" ? "未记录" : outcomeMeta(outcome).label));
+    }
+    return parts.join(" · ");
+  }
+
+  function filterButtons(s, outcome) {
+    const items = [
+      ["all", "全部", s.runs],
+      ["accepted", "交付成立", s.outcomes.accepted],
+      ["rejected", "驳回", s.outcomes.rejected],
+      ["unknown", "未记录", s.outcomes.unknown]
+    ];
+    return (
+      '<div class="filters" role="group" aria-label="按结果筛选">' +
+      items
+        .map(
+          ([value, label, count]) =>
+            '<button class="filter' + (value === outcome ? " is-on" : "") + '" type="button" data-filter="' + value + '" ' +
+            'aria-pressed="' + (value === outcome) + '">' + label + " <b>" + count + "</b></button>"
+        )
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function viewRuns(route) {
+    const q = route.params.get("q") || "";
+    const outcome = route.params.get("outcome") || "all";
     const s = DATA.summary;
+    const list = filterRuns(q, outcome);
     return (
       '<section class="band">' +
       '<div class="wrap band-grid">' +
       '<p class="clause"><span>runs</span>运行</p>' +
       '<div class="band-body">' +
-      "<h2>全部 " + s.runs + " 次运行</h2>" +
-      '<p class="lead">按时间倒序。失败的运行也留着——那是数据，不是错误。点任意一行看这次运行的闸门判定与事件时间线。</p>' +
-      '<div class="filters" role="group" aria-label="按结果筛选">' +
-      '<button class="filter is-on" type="button" data-filter="all">全部 <b>' + s.runs + "</b></button>" +
-      '<button class="filter" type="button" data-filter="accepted">交付成立 <b>' + s.outcomes.accepted + "</b></button>" +
-      '<button class="filter" type="button" data-filter="rejected">驳回 <b>' + s.outcomes.rejected + "</b></button>" +
-      '<button class="filter" type="button" data-filter="unknown">未记录 <b>' + s.outcomes.unknown + "</b></button>" +
+      "<h2>运行记录</h2>" +
+      '<p class="lead">按时间倒序。失败的运行也留着——那是数据，不是错误。点任意一行看闸门判定与事件时间线；表内可用 ↑↓ 移动、Enter 打开、<kbd class="kbd">/</kbd> 搜索。</p>' +
+      '<div class="run-tools">' +
+      '<label class="search"><span class="sr-only">搜索运行</span>' +
+      '<input id="run-search" type="search" placeholder="搜索 run_id / 任务 / 模型" value="' + esc(q) + '" autocomplete="off" spellcheck="false">' +
+      "<kbd>/</kbd></label>" +
+      filterButtons(s, outcome) +
       "</div>" +
-      '<div id="runs-view-body">' + runsTable(DATA.runs, { caption: "全部运行记录" }) + "</div>" +
+      '<p class="runs-count">' + runsCountText(list, q, outcome) + "</p>" +
+      '<div id="runs-view-body">' + runsTable(list, { caption: "筛选后的运行记录", empty: "这个筛选下没有记录。" }) + "</div>" +
       "</div></div></section>"
     );
   }
 
-  function applyFilter(value) {
+  function renderRunList() {
+    const route = parseRoute();
     const body = $("#runs-view-body");
-    if (!body) return;
-    const list = value === "all" ? DATA.runs : value === "unknown"
-      ? DATA.runs.filter((run) => !run.outcome)
-      : DATA.runs.filter((run) => run.outcome === value);
+    if (route.name !== "runs" || !body) return;
+    const q = route.params.get("q") || "";
+    const outcome = route.params.get("outcome") || "all";
+    const list = filterRuns(q, outcome);
+
     body.innerHTML = runsTable(list, {
       caption: "筛选后的运行记录",
-      empty: "这个筛选下没有记录。"
+      empty: "这个筛选下没有记录。换个关键字，或点「全部」。"
     });
+    const count = $(".runs-count");
+    if (count) count.textContent = runsCountText(list, q, outcome);
     document.querySelectorAll(".filter").forEach((btn) => {
-      btn.classList.toggle("is-on", btn.dataset.filter === value);
+      const on = (btn.dataset.filter || "all") === outcome;
+      btn.classList.toggle("is-on", on);
+      btn.setAttribute("aria-pressed", String(on));
     });
     mountRowLinks();
+    mountRunsKeyboard();
+  }
+
+  function mountRunsTools() {
+    const search = $("#run-search");
+    if (!search) return;
+    let timer = null;
+    search.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const route = parseRoute();
+        const outcome = route.params.get("outcome") || "all";
+        history.replaceState(null, "", runsHash(search.value.trim(), outcome));
+        renderRunList();
+      }, 140);
+    });
+  }
+
+  function mountRunsKeyboard() {
+    const tbody = document.querySelector("#runs-view-body tbody");
+    if (!tbody || tbody.dataset.kbdBound) return;
+    tbody.dataset.kbdBound = "1";
+    tbody.addEventListener("keydown", (event) => {
+      const link = event.target.closest(".row-link");
+      if (!link) return;
+      const links = Array.from(tbody.querySelectorAll(".row-link"));
+      const index = links.indexOf(link);
+      let next = null;
+      if (event.key === "ArrowDown") next = links[index + 1];
+      else if (event.key === "ArrowUp") next = links[index - 1];
+      else if (event.key === "Home") next = links[0];
+      else if (event.key === "End") next = links[links.length - 1];
+      if (next) {
+        event.preventDefault();
+        next.focus();
+      }
+    });
   }
 
   function eventSummary(event) {
@@ -610,6 +717,7 @@
       '<p class="clause"><span>run</span>运行详情</p>' +
       '<div class="band-body">' +
       crumbs([{ label: "概览", href: "#/" }, { label: "运行", href: "#/runs" }, { label: run.run_id }]) +
+      '<p class="print-head">随行交付台 · 运行 ' + esc(run.run_id) + " · 数据快照 " + esc(fmtTime(DATA.generated_from.latest_run_at)) + " · runs/audit.jsonl</p>" +
       "<h2>" + esc(run.task_id || run.run_id) + "</h2>" +
       '<p class="run-id mono">' + esc(run.run_id) + "</p>" +
       '<dl class="kv">' +
@@ -632,11 +740,14 @@
 
   function parseRoute() {
     const raw = (location.hash || "").replace(/^#/, "");
-    const parts = raw.split("/").filter(Boolean).map(decodeURIComponent);
-    if (!parts.length) return { name: "home" };
-    if (parts[0] === "tasks") return parts[1] ? { name: "task", id: parts[1] } : { name: "tasks" };
-    if (parts[0] === "runs") return parts[1] ? { name: "run", id: parts[1] } : { name: "runs" };
-    return { name: "home" };
+    const cut = raw.indexOf("?");
+    const path = cut === -1 ? raw : raw.slice(0, cut);
+    const params = new URLSearchParams(cut === -1 ? "" : raw.slice(cut + 1));
+    const parts = path.split("/").filter(Boolean).map(decodeURIComponent);
+    if (!parts.length) return { name: "home", params };
+    if (parts[0] === "tasks") return parts[1] ? { name: "task", id: parts[1], params } : { name: "tasks", params };
+    if (parts[0] === "runs") return parts[1] ? { name: "run", id: parts[1], params } : { name: "runs", params };
+    return { name: "home", params };
   }
 
   function renderView(route) {
@@ -646,7 +757,7 @@
       case "task":
         return viewTask(route.id);
       case "runs":
-        return viewRuns();
+        return viewRuns(route);
       case "run":
         return viewRun(route.id);
       default:
@@ -665,20 +776,38 @@
     });
   }
 
+  let lastPath = "";
+
+  function bindAppEvents(route) {
+    const app = $("#app");
+    if (!app) return;
+    app.querySelectorAll(".filter").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const current = parseRoute();
+        const q = current.params.get("q") || "";
+        location.hash = runsHash(q, btn.dataset.filter || "all");
+      });
+    });
+    if (route.name === "runs") {
+      mountRunsTools();
+      mountRunsKeyboard();
+    }
+    mountRowLinks();
+  }
+
   function render() {
     const route = parseRoute();
     const home = $("#home");
     const app = $("#app");
     const isHome = route.name === "home";
+    const path = route.name + ":" + (route.id || "");
 
     if (home) home.hidden = !isHome;
     if (app) {
       app.hidden = isHome;
       if (!isHome) {
         app.innerHTML = renderView(route);
-        const filters = app.querySelectorAll(".filter");
-        filters.forEach((btn) => btn.addEventListener("click", () => applyFilter(btn.dataset.filter)));
-        mountRowLinks();
+        bindAppEvents(route);
       }
     }
 
@@ -691,7 +820,9 @@
       link.classList.toggle("is-active", on);
     });
 
-    window.scrollTo(0, 0);
+    /* 只有换了页面才回到顶部；切筛选、改关键字不动滚动位置 */
+    if (path !== lastPath) window.scrollTo(0, 0);
+    lastPath = path;
   }
 
   /* ---------------- 启动 ---------------- */
@@ -715,6 +846,34 @@
 
   renderHome();
   initBoard();
+
+  /* 打印预览：?print=1 时把 print.css 当普通样式加载，用屏幕看纸上效果 */
+  const printLink = document.querySelector('link[media="print"]');
+  if (printLink && new URLSearchParams(location.search).has("print")) printLink.media = "all";
+
+  /* 全局快捷键：/ 聚焦搜索（只在运行列表），Esc 清空 */
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      const tag = (event.target.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || event.target.isContentEditable) return;
+      if (parseRoute().name !== "runs") return;
+      const search = $("#run-search");
+      if (search) {
+        event.preventDefault();
+        search.focus();
+        search.select();
+      }
+    }
+    if (event.key === "Escape" && event.target.id === "run-search") {
+      if (event.target.value) {
+        event.target.value = "";
+        event.target.dispatchEvent(new Event("input"));
+      } else {
+        event.target.blur();
+      }
+    }
+  });
+
   render();
 
   window.addEventListener("hashchange", render);

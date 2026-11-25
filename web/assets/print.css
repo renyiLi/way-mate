@@ -1,0 +1,107 @@
+/* 打印样式。
+   通过 <link media="print"> 加载；加 ?print=1 时页面会把它临时改成 media="all"，
+   用屏幕预览"打印出来会是什么样"。规则不包 @media print，靠 link 的 media 生效。 */
+
+@page {
+  size: A4;
+  margin: 14mm 12mm;
+}
+
+html, body {
+  background: #fff !important;
+  color: #000;
+}
+
+body {
+  font-size: 10.5pt;
+  line-height: 1.6;
+}
+
+body::after { display: none !important; }   /* 纸纹不进纸 */
+
+/* 屏幕上属于"壳"的东西，纸上都不要 */
+.topbar,
+.foot,
+.tape,
+.skip,
+.clause,
+.run-id,
+.hero-actions,
+.board-replay,
+.run-tools,
+.filters,
+.crumbs,
+.link-more,
+.runs-foot,
+.task-runs,
+.board-meta,
+.contract,
+.replay-hint {
+  display: none !important;
+}
+
+.band {
+  padding-block: 0 !important;
+  border-top: 0 !important;
+}
+
+.band-grid { display: block; }
+
+.clause { margin-bottom: 8px; }
+
+.hero {
+  padding-block: 0 !important;
+  background: none !important;
+}
+
+.hero-grid { display: block; }
+
+.hero-title { font-size: 26pt; }
+
+h1, h2, h3 { break-after: avoid; }
+
+.sub-title {
+  margin-top: 14pt;
+  break-after: avoid;
+}
+
+tr, .gate-line, .timeline li, .task, .board { break-inside: avoid; }
+
+.board, .gate, .task { box-shadow: none !important; }
+
+/* 颜色要打印出来，不然灯和色条会变成空白 */
+.lamp, .sig i, .seal, .chip-tier, .gate-verdict {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.seal { opacity: .85 !important; }
+
+a, a:visited {
+  color: #000;
+  text-decoration: none;
+}
+
+table { font-size: 9.5pt; }
+th { border-bottom: 1pt solid #000; }
+td { border-bottom: .5pt solid #bbb; }
+
+.kv > div,
+.task-meta > div {
+  grid-template-columns: 66px 1fr;
+  padding: 4pt 0;
+}
+
+.timeline li { padding: 4pt 0; }
+.gate-line { padding: 6pt 0; }
+
+/* 仅在纸上出现的页眉：打印对象 + 数据快照时间 */
+.print-head {
+  display: block;
+  margin-bottom: 10pt;
+  padding-bottom: 4pt;
+  border-bottom: .5pt solid #000;
+  font-family: var(--mono);
+  font-size: 8.5pt;
+  color: #333;
+}
