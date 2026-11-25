@@ -38,6 +38,10 @@ GATE_ORDER = ("tests", "lint", "api", "diff")
 LOCAL_TZ = timezone(timedelta(hours=8))
 ROOT = Path(__file__).resolve().parent.parent
 
+PATCH_DIR = "runs/patches"
+PATCH_TOTAL_LIMIT = 60000
+PATCH_FILE_LIMIT = 30000
+
 
 def read_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
@@ -185,7 +189,59 @@ def slim_event(event):
     return out
 
 
-def build_run(events):
+def resolve_patch(root: Path, run_id: str, declared):
+    """读 runs/patches/<run_id>.json。
+
+    只有 run_end 里声明了 patch_path、或默认路径真的存在时才返回对象；
+    旧 run 两者都没有，返回 None，页面就不出现「补丁」这一节。
+    声明了但文件不在（旧版本产生、或文件没落盘）时返回 available=False，
+    页面显示路径与原因，不当成错误。
+    """
+    default_rel = f"{PATCH_DIR}/{run_id}.json"
+    declared_rel = declared if isinstance(declared, str) and declared else ""
+    if not declared_rel and not (root / default_rel).exists():
+        return None
+
+    runs_root = (root / "runs").resolve()
+    for rel in [item for item in (declared_rel, default_rel) if item]:
+        rel = rel.replace("\\", "/")
+        path = (root / rel).resolve()
+        if not str(path).startswith(str(runs_root)):
+            continue
+        if not path.exists():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return {"path": rel, "available": False, "reason": "unreadable"}
+        if not isinstance(data, dict):
+            return {"path": rel, "available": False, "reason": "unreadable"}
+
+        raw_files = data.get("files") if isinstance(data.get("files"), dict) else {}
+        files, budget, truncated = [], PATCH_TOTAL_LIMIT, False
+        for file_path, content in raw_files.items():
+            text = content if isinstance(content, str) else str(content)
+            room = min(PATCH_FILE_LIMIT, max(0, budget))
+            clipped = text[:room]
+            if len(clipped) < len(text):
+                truncated = True
+            budget -= len(clipped)
+            files.append({"path": str(file_path), "chars": len(text), "content": clipped})
+            if budget <= 0:
+                break
+        rationale = data.get("rationale") if isinstance(data.get("rationale"), str) else ""
+        return {
+            "path": rel,
+            "available": True,
+            "files": files,
+            "rationale": rationale,
+            "truncated": truncated,
+        }
+
+    return {"path": (declared_rel or default_rel).replace("\\", "/"), "available": False, "reason": "missing"}
+
+
+def build_run(events, root: Path):
     events = sorted(events, key=lambda e: parse_ts(e.get("ts")) or datetime.min.replace(tzinfo=timezone.utc))
     starts = [e for e in events if e.get("event") == "run_start"]
     ends = [e for e in events if e.get("event") == "run_end"]
@@ -200,7 +256,13 @@ def build_run(events):
 
     start_task = start.get("task") if isinstance(start.get("task"), dict) else {}
     gate_report = gate_event.get("report") if isinstance(gate_event.get("report"), dict) else {}
-    task_id = start.get("task_id") or start_task.get("task_id") or gate_report.get("task_id") or ""
+    task_id = (
+        start.get("task_id")
+        or start_task.get("task_id")
+        or end.get("task_id")
+        or gate_report.get("task_id")
+        or ""
+    )
 
     budget = end.get("budget") if isinstance(end.get("budget"), dict) else {}
     tokens = end.get("tokens")
@@ -225,8 +287,8 @@ def build_run(events):
     ended = max(stamps) if stamps else None
 
     # 只有 run_start 与 run_end 都在时才算时长；否则宁可为 null，不编数字
-    duration_ms = None
-    if starts and ends and started and ended:
+    duration_ms = end.get("duration_ms") if isinstance(end.get("duration_ms"), int) else None
+    if duration_ms is None and starts and ends and started and ended:
         duration_ms = int((ended - started).total_seconds() * 1000)
 
     return {
@@ -249,18 +311,19 @@ def build_run(events):
         "gate_signature": gate_event.get("signature"),
         "gate": slim_gate(gate_report) if gate_report else None,
         "events": len(events),
+        "patch": resolve_patch(root, events[0].get("run_id") or "", end.get("patch_path")),
         "timeline": [slim_event(event) for event in events],
     }
 
 
-def build_runs(events):
+def build_runs(events, root: Path):
     grouped = {}
     for event in events:
         run_id = event.get("run_id")
         if not isinstance(run_id, str) or not run_id:
             continue
         grouped.setdefault(run_id, []).append(event)
-    runs = [build_run(group) for group in grouped.values()]
+    runs = [build_run(group, root) for group in grouped.values()]
     runs.sort(key=lambda r: (r["started_at"] or "", r["run_id"]), reverse=True)
     return runs
 
@@ -315,7 +378,7 @@ def attach_task_runs(tasks, runs):
 def build_payload(root: Path):
     tasks = load_tasks(root)
     events, total_lines, bad_lines = load_events(root)
-    runs = build_runs(events)
+    runs = build_runs(events, root)
     attach_task_runs(tasks, runs)
 
     outcomes = Counter(r.get("outcome") or "unknown" for r in runs)

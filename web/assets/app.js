@@ -311,6 +311,37 @@
     replaying = false;
   }
 
+  function renderRecentFails() {
+    const wrap = $("#recent-fails");
+    if (!wrap) return;
+    const fails = DATA.runs
+      .filter((run) => run.outcome === "rejected" || (run.gate && !run.gate.all_green))
+      .slice(0, 5);
+    if (!fails.length) {
+      wrap.innerHTML = '<p class="runs-note">最近没有失败记录。</p>';
+      return;
+    }
+    wrap.innerHTML =
+      '<h3 class="sub-title">最近失败 <span class="count">' + fails.length + "</span></h3>" +
+      '<ol class="fail-list">' +
+      fails
+        .map((run) => {
+          const bad = run.gate ? run.gate.results.filter((item) => !item.ok).map((item) => item.name) : [];
+          return (
+            '<li><a href="#/runs/' + encodeURIComponent(run.run_id) + '">' +
+            '<span class="fail-time">' + esc(fmtTime(run.started_at)) + "</span>" +
+            '<span class="fail-task">' + esc(run.task_id || "—") + "</span>" +
+            '<span class="fail-model">' + esc(modelLabel(run)) + "</span>" +
+            (bad.length
+              ? '<span class="fail-gates">' + bad.map((name) => '<i class="fail-gate">' + esc(name) + "</i>").join("") + "</span>"
+              : '<span class="fail-gates"></span>') +
+            "</a></li>"
+          );
+        })
+        .join("") +
+      "</ol>";
+  }
+
   function renderHome() {
     if (!DATA) return;
 
@@ -351,6 +382,8 @@
           .join("");
       }
     }
+
+    renderRecentFails();
 
     const note = $("#runs-note");
     if (note) {
@@ -566,7 +599,13 @@
       (task.contract_yaml
         ? '<details class="contract"><summary>contract.yaml 原文 · ' + esc(task.contract_source) + "</summary><pre><code>" + esc(task.contract_yaml) + "</code></pre></details>"
         : "") +
+      '<div class="sub-head">' +
       '<h3 class="sub-title">这个任务上的运行 <span class="count">' + runs.total + "</span></h3>" +
+      (related.length > 1
+        ? '<a class="link-more" href="#/runs/compare?a=' + encodeURIComponent(related[1].run_id) +
+          "&b=" + encodeURIComponent(related[0].run_id) + '" title="快捷键 c">对比最近两次</a>'
+        : "") +
+      "</div>" +
       runTimeline(related) +
       runsTable(related, {
         caption: task.id + " 的运行记录",
@@ -808,6 +847,37 @@
     return parts.join(" · ") || "—";
   }
 
+  function patchSection(run) {
+    if (!run.patch) return "";
+    const patch = run.patch;
+    if (!patch.available) {
+      const reason = patch.reason === "unreadable" ? "文件存在但读不出来" : "文件不存在";
+      return (
+        '<h3 class="sub-title">补丁</h3>' +
+        '<p class="patch-missing">' + reason + "：<span class=\"mono\">" + esc(patch.path) + "</span>。" +
+        (patch.reason === "missing" ? "旧运行可能没有落盘，或 runs/ 被清理过。" : "") +
+        "</p>"
+      );
+    }
+    const files = (patch.files || [])
+      .map((file) => {
+        const autoOpen = (patch.files || []).length === 1 && file.chars <= 6000;
+        return (
+          '<details class="patch-file"' + (autoOpen ? " open" : "") +
+          "><summary><span class=\"mono\">" + esc(file.path) + "</span>" +
+          '<span class="patch-size">' + fmtNum(file.chars) + " 字符</span></summary>" +
+          '<pre class="patch-code"><code>' + esc(file.content) + "</code></pre></details>"
+        );
+      })
+      .join("");
+    return (
+      '<h3 class="sub-title">补丁 <span class="count">' + (patch.files || []).length + " 个文件</span></h3>" +
+      (patch.rationale ? '<p class="patch-rationale">' + esc(patch.rationale) + "</p>" : "") +
+      '<div class="patch-files">' + files + "</div>" +
+      (patch.truncated ? '<p class="runs-note">内容较长，已截断显示（单文件 30k / 合计 60k 字符上限）。</p>' : "")
+    );
+  }
+
   function viewRun(id) {
     const run = DATA.runs.find((item) => item.run_id === id);
     if (!run) {
@@ -856,6 +926,7 @@
           (run.gate.all_green ? "all_green · 交付成立" : "未通过 · 交付不成立") +
           "</p>" + gateDetailRows(run.gate)
         : '<p class="empty">这次运行没有闸门报告。</p>') +
+      patchSection(run) +
       '<h3 class="sub-title">事件时间线 <span class="count">' + run.timeline.length + "</span></h3>" +
       '<ol class="timeline">' + run.timeline.map(timelineItem).join("") + "</ol>" +
       '<p class="runs-note">数据源 runs/audit.jsonl · 只展示事件元数据，不含模型原文。</p>' +
@@ -1192,11 +1263,13 @@
   const printLink = document.querySelector('link[media="print"]');
   if (printLink && new URLSearchParams(location.search).has("print")) printLink.media = "all";
 
-  /* 全局快捷键：/ 聚焦搜索（只在运行列表），Esc 清空 */
+  /* 全局快捷键：/ 聚焦搜索（只在运行列表），Esc 清空，c 对比（任务/运行详情） */
   document.addEventListener("keydown", (event) => {
-    if (event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
-      const tag = (event.target.tagName || "").toLowerCase();
-      if (tag === "input" || tag === "textarea" || event.target.isContentEditable) return;
+    const tag = (event.target.tagName || "").toLowerCase();
+    const typing = tag === "input" || tag === "textarea" || event.target.isContentEditable;
+    const plain = !event.metaKey && !event.ctrlKey && !event.altKey;
+
+    if (event.key === "/" && plain && !typing) {
       if (parseRoute().name !== "runs") return;
       const search = $("#run-search");
       if (search) {
@@ -1204,7 +1277,28 @@
         search.focus();
         search.select();
       }
+      return;
     }
+
+    if (event.key === "c" && plain && !typing) {
+      const route = parseRoute();
+      if (route.name === "run") {
+        const run = DATA.runs.find((item) => item.run_id === route.id);
+        const previous = run ? previousRunFor(run) : null;
+        if (previous) {
+          event.preventDefault();
+          location.hash = "#/runs/compare?a=" + encodeURIComponent(previous.run_id) + "&b=" + encodeURIComponent(run.run_id);
+        }
+      } else if (route.name === "task") {
+        const related = DATA.runs.filter((item) => item.task_id === route.id);
+        if (related.length > 1) {
+          event.preventDefault();
+          location.hash = "#/runs/compare?a=" + encodeURIComponent(related[1].run_id) + "&b=" + encodeURIComponent(related[0].run_id);
+        }
+      }
+      return;
+    }
+
     if (event.key === "Escape" && event.target.id === "run-search") {
       if (event.target.value) {
         event.target.value = "";

@@ -8,21 +8,21 @@
       "tasks/tabulate-410/task.json"
     ],
     "audit": "runs/audit.jsonl",
-    "audit_lines": 439,
-    "audit_events": 439,
+    "audit_lines": 443,
+    "audit_events": 443,
     "audit_bad_lines": 0,
-    "latest_run_at": "2026-11-25T16:11:56+08:00"
+    "latest_run_at": "2026-11-25T16:36:40+08:00"
   },
   "summary": {
     "tasks": 4,
-    "runs": 83,
-    "runs_with_gate": 69,
+    "runs": 84,
+    "runs_with_gate": 70,
     "outcomes": {
-      "accepted": 42,
+      "accepted": 43,
       "rejected": 24,
       "unknown": 11
     },
-    "tokens": 2063616,
+    "tokens": 2097279,
     "models": [
       "deepseek-chat",
       "deepseek-flash",
@@ -38,27 +38,27 @@
   "gate_stats": [
     {
       "name": "tests",
-      "evaluated": 69,
+      "evaluated": 70,
       "failed": 23,
-      "passed": 46
+      "passed": 47
     },
     {
       "name": "lint",
-      "evaluated": 69,
+      "evaluated": 70,
       "failed": 0,
-      "passed": 69
+      "passed": 70
     },
     {
       "name": "api",
-      "evaluated": 69,
+      "evaluated": 70,
       "failed": 0,
-      "passed": 69
+      "passed": 70
     },
     {
       "name": "diff",
-      "evaluated": 69,
+      "evaluated": 70,
       "failed": 5,
-      "passed": 64
+      "passed": 65
     }
   ],
   "tasks": [
@@ -187,14 +187,14 @@
       "contract_source": "tasks/tabulate-366/contract.yaml",
       "source": "tasks/tabulate-366/task.json",
       "runs": {
-        "total": 11,
-        "accepted": 6,
+        "total": 12,
+        "accepted": 7,
         "rejected": 5,
         "unknown": 0
       },
       "last_run": {
-        "run_id": "20261125T145100-3f7aff",
-        "started_at": "2026-11-25T14:51:00+08:00",
+        "run_id": "20261125T163640-c4b8f3",
+        "started_at": "2026-11-25T16:36:40+08:00",
         "outcome": "accepted"
       }
     },
@@ -345,6 +345,124 @@
   ],
   "runs": [
     {
+      "run_id": "20261125T163640-c4b8f3",
+      "task_id": "tabulate-366",
+      "started_at": "2026-11-25T16:36:40+08:00",
+      "ended_at": "2026-11-25T16:36:43+08:00",
+      "duration_ms": 2898,
+      "interface": "authoring",
+      "protocol": "single-shot",
+      "backend": null,
+      "provider": "deepseek",
+      "model": "deepseek-chat",
+      "seats": null,
+      "outcome": "accepted",
+      "rounds": 1,
+      "calls": 1,
+      "tokens": 33663,
+      "gate_attempts": 1,
+      "gate_signature": "tests:1|lint:1|api:1|diff:1",
+      "gate": {
+        "task_id": "tabulate-366",
+        "all_green": true,
+        "results": [
+          {
+            "name": "tests",
+            "ok": true,
+            "detail": "全部通过；通过 1",
+            "metrics": {
+              "counts": {
+                "passed": 1
+              }
+            }
+          },
+          {
+            "name": "lint",
+            "ok": true,
+            "detail": "问题总数 4（基线 4，新增 0，上限 0）",
+            "metrics": {
+              "count": 4,
+              "baseline": 4,
+              "new": 0,
+              "max_new": 0
+            }
+          },
+          {
+            "name": "api",
+            "ok": true,
+            "detail": "契约未冻结接口",
+            "metrics": {}
+          },
+          {
+            "name": "diff",
+            "ok": true,
+            "detail": "改动 1 个文件 / 1 行（上限 3 / 40）",
+            "metrics": {
+              "files": 1,
+              "lines": 1,
+              "touched": [
+                "tabulate/__init__.py"
+              ],
+              "forbidden": []
+            }
+          }
+        ]
+      },
+      "events": 4,
+      "patch": {
+        "path": "runs/patches/20261125T163640-c4b8f3.json",
+        "available": true,
+        "files": [
+          {
+            "path": "tabulate/__init__.py",
+            "chars": 103569,
+            "content": "\"\"\"Pretty-print tabular data.\"\"\"\n\nimport warnings\nfrom collections import namedtuple\nfrom collections.abc import Iterable, Sized\nfrom html import escape as htmlescape\nfrom itertools import chain, zip_longest as izip_longest\nfrom functools import reduce, partial\nimport io\nimport re\nimport math\nimport textwrap\nimport dataclasses\nimport sys\n\ntry:\n    import wcwidth  # optional wide-character (CJK) support\nexcept ImportError:\n    wcwidth = None\n\n\ndef _is_file(f):\n    return isinstance(f, io.IOBase)\n\n\n__all__ = [\"tabulate\", \"tabulate_formats\", \"simple_separated_format\"]\ntry:\n    from .version import version as __version__  # noqa: F401\nexcept ImportError:\n    pass  # running __init__.py as a script, AppVeyor pytests\n\n\n# minimum extra space in headers\nMIN_PADDING = 2\n\n_DEFAULT_FLOATFMT = \"g\"\n_DEFAULT_INTFMT = \"\"\n_DEFAULT_MISSINGVAL = \"\"\n# default align will be overwritten by \"left\", \"center\" or \"decimal\"\n# depending on the formatter\n_DEFAULT_ALIGN = \"default\"\n\n\n# if True, enable wide-character (CJK) support\nWIDE_CHARS_MODE = wcwidth is not None\n\n# Constant that can be used as part of passed rows to generate a separating line\n# It is purposely an unprintable character, very unlikely to be used in a table\nSEPARATING_LINE = \"\\001\"\n\nLine = namedtuple(\"Line\", [\"begin\", \"hline\", \"sep\", \"end\"])\n\n\nDataRow = namedtuple(\"DataRow\", [\"begin\", \"sep\", \"end\"])\n\n\n# A table structure is supposed to be:\n#\n#     --- lineabove ---------\n#         headerrow\n#     --- linebelowheader ---\n#         datarow\n#     --- linebetweenrows ---\n#     ... (more datarows) ...\n#     --- linebetweenrows ---\n#         last datarow\n#     --- linebelow ---------\n#\n# TableFormat's line* elements can be\n#\n#   - either None, if the element is not used,\n#   - or a Line tuple,\n#   - or a function: [col_widths], [col_alignments] -> string.\n#\n# TableFormat's *row elements can be\n#\n#   - either None, if the element is not used,\n#   - or a DataRow tuple,\n#   - or a function: [cell_values], [col_widths], [col_alignments] -> string.\n#\n# padding (an integer) is the amount of white space around data values.\n#\n# with_header_hide:\n#\n#   - either None, to display all table elements unconditionally,\n#   - or a list of elements not to be displayed if the table has column headers.\n#\nTableFormat = namedtuple(\n    \"TableFormat\",\n    [\n        \"lineabove\",\n        \"linebelowheader\",\n        \"linebetweenrows\",\n        \"linebelow\",\n        \"headerrow\",\n        \"datarow\",\n        \"padding\",\n        \"with_header_hide\",\n    ],\n)\n\n\ndef _is_separating_line_value(value):\n    return type(value) is str and value.strip() == SEPARATING_LINE\n\n\ndef _is_separating_line(row):\n    row_type = type(row)\n    is_sl = (row_type == list or row_type == str) and (\n        (len(row) >= 1 and _is_separating_line_value(row[0]))\n        or (len(row) >= 2 and _is_separating_line_value(row[1]))\n    )\n\n    return is_sl\n\n\ndef _pipe_segment_with_colons(align, colwidth):\n    \"\"\"Return a segment of a horizontal line with optional colons which\n    indicate column's alignment (as in `pipe` output format).\"\"\"\n    w = colwidth\n    if align in [\"right\", \"decimal\"]:\n        return (\"-\" * (w - 1)) + \":\"\n    elif align == \"center\":\n        return \":\" + (\"-\" * (w - 2)) + \":\"\n    elif align == \"left\":\n        return \":\" + (\"-\" * (w - 1))\n    else:\n        return \"-\" * w\n\n\ndef _pipe_line_with_colons(colwidths, colaligns):\n    \"\"\"Return a horizontal line with optional colons to indicate column's\n    alignment (as in `pipe` output format).\"\"\"\n    if not colaligns:  # e.g. printing an empty data frame (github issue #15)\n        colaligns = [\"\"] * len(colwidths)\n    segments = [_pipe_segment_with_colons(a, w) for a, w in zip(colaligns, colwidths)]\n    return \"|\" + \"|\".join(segments) + \"|\"\n\n\ndef _grid_segment_with_colons(colwidth, align):\n    \"\"\"Return a segment of a horizontal line with optional colons which indicate\n    column's alignment in a grid table.\"\"\"\n    width = colwidth\n    if align == \"right\":\n        return (\"=\" * (width - 1)) + \":\"\n    elif align == \"center\":\n        return \":\" + (\"=\" * (width - 2)) + \":\"\n    elif align == \"left\":\n        return \":\" + (\"=\" * (width - 1))\n    else:\n        return \"=\" * width\n\n\ndef _grid_line_with_colons(colwidths, colaligns):\n    \"\"\"Return a horizontal line with optional colons to indicate column's alignment\n    in a grid table.\"\"\"\n    if not colaligns:\n        colaligns = [\"\"] * len(colwidths)\n    segments = [_grid_segment_with_colons(w, a) for a, w in zip(colaligns, colwidths)]\n    return \"+\" + \"+\".join(segments) + \"+\"\n\n\ndef _mediawiki_row_with_attrs(separator, cell_values, colwidths, colaligns):\n    alignment = {\n        \"left\": \"\",\n        \"right\": 'style=\"text-align: right;\"| ',\n        \"center\": 'style=\"text-align: center;\"| ',\n        \"decimal\": 'style=\"text-align: right;\"| ',\n    }\n    # hard-coded padding _around_ align attribute and value together\n    # rather than padding parameter which affects only the value\n    values_with_attrs = [\n        \" \" + alignment.get(a, \"\") + c + \" \" for c, a in zip(cell_values, colaligns)\n    ]\n    colsep = separator * 2\n    return (separator + colsep.join(values_with_attrs)).rstrip()\n\n\ndef _textile_row_with_attrs(cell_values, colwidths, colaligns):\n    cell_values[0] += \" \"\n    alignment = {\"left\": \"<.\", \"right\": \">.\", \"center\": \"=.\", \"decimal\": \">.\"}\n    values = (alignment.get(a, \"\") + v for a, v in zip(colaligns, cell_values))\n    return \"|\" + \"|\".join(values) + \"|\"\n\n\ndef _html_begin_table_without_header(colwidths_ignore, colaligns_ignore):\n    # this table header will be suppressed if there is a header row\n    return \"<table>\\n<tbody>\"\n\n\ndef _html_row_with_attrs(celltag, unsafe, cell_values, colwidths, colaligns):\n    alignment = {\n        \"left\": \"\",\n        \"right\": ' style=\"text-align: right;\"',\n        \"center\": ' style=\"text-align: center;\"',\n        \"decimal\": ' style=\"text-align: right;\"',\n    }\n    if unsafe:\n        values_with_attrs = [\n            \"<{0}{1}>{2}</{0}>\".format(celltag, alignment.get(a, \"\"), c)\n            for c, a in zip(cell_values, colaligns)\n        ]\n    else:\n        values_with_attrs = [\n            \"<{0}{1}>{2}</{0}>\".format(celltag, alignment.get(a, \"\"), htmlescape(c))\n            for c, a in zip(cell_values, colaligns)\n        ]\n    rowhtml = \"<tr>{}</tr>\".format(\"\".join(values_with_attrs).rstrip())\n    if celltag == \"th\":  # it's a header row, create a new table header\n        rowhtml = f\"<table>\\n<thead>\\n{rowhtml}\\n</thead>\\n<tbody>\"\n    return rowhtml\n\n\ndef _moin_row_with_attrs(celltag, cell_values, colwidths, colaligns, header=\"\"):\n    alignment = {\n        \"left\": \"\",\n        \"right\": '<style=\"text-align: right;\">',\n        \"center\": '<style=\"text-align: center;\">',\n        \"decimal\": '<style=\"text-align: right;\">',\n    }\n    values_with_attrs = [\n        \"{}{} {} \".format(celltag, alignment.get(a, \"\"), header + c + header)\n        for c, a in zip(cell_values, colaligns)\n    ]\n    return \"\".join(values_with_attrs) + \"||\"\n\n\ndef _latex_line_begin_tabular(colwidths, colaligns, booktabs=False, longtable=False):\n    alignment = {\"left\": \"l\", \"right\": \"r\", \"center\": \"c\", \"decimal\": \"r\"}\n    tabular_columns_fmt = \"\".join([alignment.get(a, \"l\") for a in colaligns])\n    return \"\\n\".join(\n        [\n            (\"\\\\begin{tabular}{\" if not longtable else \"\\\\begin{longtable}{\")\n            + tabular_columns_fmt\n            + \"}\",\n            \"\\\\toprule\" if booktabs else \"\\\\hline\",\n        ]\n    )\n\n\ndef _asciidoc_row(is_header, *args):\n    \"\"\"handle header and data rows for asciidoc format\"\"\"\n\n    def make_header_line(is_header, colwidths, colaligns):\n        # generate the column specifiers\n\n        alignment = {\"left\": \"<\", \"right\": \">\", \"center\": \"^\", \"decimal\": \">\"}\n        # use the column widths generated by tabulate for the asciidoc column width specifiers\n        asciidoc_alignments = zip(\n            colwidths, [alignment[colalign] for colalign in colaligns]\n        )\n        asciidoc_column_specifiers = [\n            f\"{width:d}{align}\" for width, align in asciidoc_alignments\n        ]\n        header_list = ['cols=\"' + (\",\".join(asciidoc_column_specifiers)) + '\"']\n\n        # generate the list of options (currently only \"header\")\n        options_list = []\n\n        if is_header:\n            options_list.append(\"header\")\n\n        if options_list:\n            header_list += ['options=\"' + \",\".join(options_list) + '\"']\n\n        # generate the list of entries in the table header field\n\n        return \"[{}]\\n|====\".format(\",\".join(header_list))\n\n    if len(args) == 2:\n        # two arguments are passed if called in the context of aboveline\n        # print the table header with column widths and optional header tag\n        return make_header_line(False, *args)\n\n    elif len(args) == 3:\n        # three arguments are passed if called in the context of dataline or headerline\n        # print the table line and make the aboveline if it is a header\n\n        cell_values, colwidths, colaligns = args\n        data_line = \"|\" + \"|\".join(cell_values)\n\n        if is_header:\n            return make_header_line(True, colwidths, colaligns) + \"\\n\" + data_line\n        else:\n            return data_line\n\n    else:\n        raise ValueError(\n            \" _asciidoc_row() requires two (colwidths, colaligns) \"\n            + \"or three (cell_values, colwidths, colaligns) arguments) \"\n        )\n\n\nLATEX_ESCAPE_RULES = {\n    r\"&\": r\"\\&\",\n    r\"%\": r\"\\%\",\n    r\"$\": r\"\\$\",\n    r\"#\": r\"\\#\",\n    r\"_\": r\"\\_\",\n    r\"^\": r\"\\^{}\",\n    r\"{\": r\"\\{\",\n    r\"}\": r\"\\}\",\n    r\"~\": r\"\\textasciitilde{}\",\n    \"\\\\\": r\"\\textbackslash{}\",\n    r\"<\": r\"\\ensuremath{<}\",\n    r\">\": r\"\\ensuremath{>}\",\n}\n\n\ndef _latex_row(cell_values, colwidths, colaligns, escrules=LATEX_ESCAPE_RULES):\n    def escape_char(c):\n        return escrules.get(c, c)\n\n    escaped_values = [\"\".join(map(escape_char, cell)) for cell in cell_values]\n    rowfmt = DataRow(\"\", \"&\", \"\\\\\\\\\")\n    return _build_simple_row(escaped_values, rowfmt)\n\n\ndef _rst_escape_first_column(rows, headers):\n    def escape_empty(val):\n        if isinstance(val, (str, bytes)) and not val.strip():\n            return \"..\"\n        else:\n            return val\n\n    new_headers = list(headers)\n    new_rows = []\n    if headers:\n        new_headers[0] = escape_empty(headers[0])\n    for row in rows:\n        new_row = list(row)\n        if new_row:\n            new_row[0] = escape_empty(row[0])\n        new_rows.append(new_row)\n    return new_rows, new_headers\n\n\n_table_formats = {\n    \"simple\": TableFormat(\n        lineabove=Line(\"\", \"-\", \"  \", \"\"),\n        linebelowheader=Line(\"\", \"-\", \"  \", \"\"),\n        linebetweenrows=None,\n        linebelow=Line(\"\", \"-\", \"  \", \"\"),\n        headerrow=DataRow(\"\", \"  \", \"\"),\n        datarow=DataRow(\"\", \"  \", \"\"),\n        padding=0,\n        with_header_hide=[\"lineabove\", \"linebelow\"],\n    ),\n    \"plain\": TableFormat(\n        lineabove=None,\n        linebelowheader=None,\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"\", \"  \", \"\"),\n        datarow=DataRow(\"\", \"  \", \"\"),\n        padding=0,\n        with_header_hide=None,\n    ),\n    \"grid\": TableFormat(\n        lineabove=Line(\"+\", \"-\", \"+\", \"+\"),\n        linebelowheader=Line(\"+\", \"=\", \"+\", \"+\"),\n        linebetweenrows=Line(\"+\", \"-\", \"+\", \"+\"),\n        linebelow=Line(\"+\", \"-\", \"+\", \"+\"),\n        headerrow=DataRow(\"|\", \"|\", \"|\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"simple_grid\": TableFormat(\n        lineabove=Line(\"┌\", \"─\", \"┬\", \"┐\"),\n        linebelowheader=Line(\"├\", \"─\", \"┼\", \"┤\"),\n        linebetweenrows=Line(\"├\", \"─\", \"┼\", \"┤\"),\n        linebelow=Line(\"└\", \"─\", \"┴\", \"┘\"),\n        headerrow=DataRow(\"│\", \"│\", \"│\"),\n        datarow=DataRow(\"│\", \"│\", \"│\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"rounded_grid\": TableFormat(\n        lineabove=Line(\"╭\", \"─\", \"┬\", \"╮\"),\n        linebelowheader=Line(\"├\", \"─\", \"┼\", \"┤\"),\n        linebetweenrows=Line(\"├\", \"─\", \"┼\", \"┤\"),\n        linebelow=Line(\"╰\", \"─\", \"┴\", \"╯\"),\n        headerrow=DataRow(\"│\", \"│\", \"│\"),\n        datarow=DataRow(\"│\", \"│\", \"│\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"heavy_grid\": TableFormat(\n        lineabove=Line(\"┏\", \"━\", \"┳\", \"┓\"),\n        linebelowheader=Line(\"┣\", \"━\", \"╋\", \"┫\"),\n        linebetweenrows=Line(\"┣\", \"━\", \"╋\", \"┫\"),\n        linebelow=Line(\"┗\", \"━\", \"┻\", \"┛\"),\n        headerrow=DataRow(\"┃\", \"┃\", \"┃\"),\n        datarow=DataRow(\"┃\", \"┃\", \"┃\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"mixed_grid\": TableFormat(\n        lineabove=Line(\"┍\", \"━\", \"┯\", \"┑\"),\n        linebelowheader=Line(\"┝\", \"━\", \"┿\", \"┥\"),\n        linebetweenrows=Line(\"├\", \"─\", \"┼\", \"┤\"),\n        linebelow=Line(\"┕\", \"━\", \"┷\", \"┙\"),\n        headerrow=DataRow(\"│\", \"│\", \"│\"),\n        datarow=DataRow(\"│\", \"│\", \"│\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"double_grid\": TableFormat(\n        lineabove=Line(\"╔\", \"═\", \"╦\", \"╗\"),\n        linebelowheader=Line(\"╠\", \"═\", \"╬\", \"╣\"),\n        linebetweenrows=Line(\"╠\", \"═\", \"╬\", \"╣\"),\n        linebelow=Line(\"╚\", \"═\", \"╩\", \"╝\"),\n        headerrow=DataRow(\"║\", \"║\", \"║\"),\n        datarow=DataRow(\"║\", \"║\", \"║\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"fancy_grid\": TableFormat(\n        lineabove=Line(\"╒\", \"═\", \"╤\", \"╕\"),\n        linebelowheader=Line(\"╞\", \"═\", \"╪\", \"╡\"),\n        linebetweenrows=Line(\"├\", \"─\", \"┼\", \"┤\"),\n        linebelow=Line(\"╘\", \"═\", \"╧\", \"╛\"),\n        headerrow=DataRow(\"│\", \"│\", \"│\"),\n        datarow=DataRow(\"│\", \"│\", \"│\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"colon_grid\": TableFormat(\n        lineabove=Line(\"+\", \"-\", \"+\", \"+\"),\n        linebelowheader=_grid_line_with_colons,\n        linebetweenrows=Line(\"+\", \"-\", \"+\", \"+\"),\n        linebelow=Line(\"+\", \"-\", \"+\", \"+\"),\n        headerrow=DataRow(\"|\", \"|\", \"|\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"outline\": TableFormat(\n        lineabove=Line(\"+\", \"-\", \"+\", \"+\"),\n        linebelowheader=Line(\"+\", \"=\", \"+\", \"+\"),\n        linebetweenrows=None,\n        linebelow=Line(\"+\", \"-\", \"+\", \"+\"),\n        headerrow=DataRow(\"|\", \"|\", \"|\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"simple_outline\": TableFormat(\n        lineabove=Line(\"┌\", \"─\", \"┬\", \"┐\"),\n        linebelowheader=Line(\"├\", \"─\", \"┼\", \"┤\"),\n        linebetweenrows=None,\n        linebelow=Line(\"└\", \"─\", \"┴\", \"┘\"),\n        headerrow=DataRow(\"│\", \"│\", \"│\"),\n        datarow=DataRow(\"│\", \"│\", \"│\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"rounded_outline\": TableFormat(\n        lineabove=Line(\"╭\", \"─\", \"┬\", \"╮\"),\n        linebelowheader=Line(\"├\", \"─\", \"┼\", \"┤\"),\n        linebetweenrows=None,\n        linebelow=Line(\"╰\", \"─\", \"┴\", \"╯\"),\n        headerrow=DataRow(\"│\", \"│\", \"│\"),\n        datarow=DataRow(\"│\", \"│\", \"│\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"heavy_outline\": TableFormat(\n        lineabove=Line(\"┏\", \"━\", \"┳\", \"┓\"),\n        linebelowheader=Line(\"┣\", \"━\", \"╋\", \"┫\"),\n        linebetweenrows=None,\n        linebelow=Line(\"┗\", \"━\", \"┻\", \"┛\"),\n        headerrow=DataRow(\"┃\", \"┃\", \"┃\"),\n        datarow=DataRow(\"┃\", \"┃\", \"┃\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"mixed_outline\": TableFormat(\n        lineabove=Line(\"┍\", \"━\", \"┯\", \"┑\"),\n        linebelowheader=Line(\"┝\", \"━\", \"┿\", \"┥\"),\n        linebetweenrows=None,\n        linebelow=Line(\"┕\", \"━\", \"┷\", \"┙\"),\n        headerrow=DataRow(\"│\", \"│\", \"│\"),\n        datarow=DataRow(\"│\", \"│\", \"│\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"double_outline\": TableFormat(\n        lineabove=Line(\"╔\", \"═\", \"╦\", \"╗\"),\n        linebelowheader=Line(\"╠\", \"═\", \"╬\", \"╣\"),\n        linebetweenrows=None,\n        linebelow=Line(\"╚\", \"═\", \"╩\", \"╝\"),\n        headerrow=DataRow(\"║\", \"║\", \"║\"),\n        datarow=DataRow(\"║\", \"║\", \"║\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"fancy_outline\": TableFormat(\n        lineabove=Line(\"╒\", \"═\", \"╤\", \"╕\"),\n        linebelowheader=Line(\"╞\", \"═\", \"╪\", \"╡\"),\n        linebetweenrows=None,\n        linebelow=Line(\"╘\", \"═\", \"╧\", \"╛\"),\n        headerrow=DataRow(\"│\", \"│\", \"│\"),\n        datarow=DataRow(\"│\", \"│\", \"│\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"github\": TableFormat(\n        lineabove=Line(\"|\", \"-\", \"|\", \"|\"),\n        linebelowheader=Line(\"|\", \"-\", \"|\", \"|\"),\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"|\", \"|\", \"|\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=[\"lineabove\"],\n    ),\n    \"pipe\": TableFormat(\n        lineabove=_pipe_line_with_colons,\n        linebelowheader=_pipe_line_with_colons,\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"|\", \"|\", \"|\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=[\"lineabove\"],\n    ),\n    \"orgtbl\": TableFormat(\n        lineabove=None,\n        linebelowheader=Line(\"|\", \"-\", \"+\", \"|\"),\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"|\", \"|\", \"|\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"jira\": TableFormat(\n        lineabove=None,\n        linebelowheader=None,\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"||\", \"||\", \"||\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"presto\": TableFormat(\n        lineabove=None,\n        linebelowheader=Line(\"\", \"-\", \"+\", \"\"),\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"\", \"|\", \"\"),\n        datarow=DataRow(\"\", \"|\", \"\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"pretty\": TableFormat(\n        lineabove=Line(\"+\", \"-\", \"+\", \"+\"),\n        linebelowheader=Line(\"+\", \"-\", \"+\", \"+\"),\n        linebetweenrows=None,\n        linebelow=Line(\"+\", \"-\", \"+\", \"+\"),\n        headerrow=DataRow(\"|\", \"|\", \"|\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"psql\": TableFormat(\n        lineabove=Line(\"+\", \"-\", \"+\", \"+\"),\n        linebelowheader=Line(\"|\", \"-\", \"+\", \"|\"),\n        linebetweenrows=None,\n        linebelow=Line(\"+\", \"-\", \"+\", \"+\"),\n        headerrow=DataRow(\"|\", \"|\", \"|\"),\n        datarow=DataRow(\"|\", \"|\", \"|\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"rst\": TableFormat(\n        lineabove=Line(\"\", \"=\", \"  \", \"\"),\n        linebelowheader=Line(\"\", \"=\", \"  \", \"\"),\n        linebetweenrows=None,\n        linebelow=Line(\"\", \"=\", \"  \", \"\"),\n        headerrow=DataRow(\"\", \"  \", \"\"),\n        datarow=DataRow(\"\", \"  \", \"\"),\n        padding=0,\n        with_header_hide=None,\n    ),\n    \"mediawiki\": TableFormat(\n        lineabove=Line(\n            '{| class=\"wikitable\" style=\"text-align: left;\"',\n            \"\",\n            \"\",\n            \"\\n|+ <!-- caption -->\\n|-\",\n        ),\n        linebelowheader=Line(\"|-\", \"\", \"\", \"\"),\n        linebetweenrows=Line(\"|-\", \"\", \"\", \"\"),\n        linebelow=Line(\"|}\", \"\", \"\", \"\"),\n        headerrow=partial(_mediawiki_row_with_attrs, \"!\"),\n        datarow=partial(_mediawiki_row_with_attrs, \"|\"),\n        padding=0,\n        with_header_hide=None,\n    ),\n    \"moinmoin\": TableFormat(\n        lineabove=None,\n        linebelowheader=None,\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=partial(_moin_row_with_attrs, \"||\", header=\"'''\"),\n        datarow=partial(_moin_row_with_attrs, \"||\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"youtrack\": TableFormat(\n        lineabove=None,\n        linebelowheader=None,\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"|| \", \" || \", \" || \"),\n        datarow=DataRow(\"| \", \" | \", \" |\"),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"html\": TableFormat(\n        lineabove=_html_begin_table_without_header,\n        linebelowheader=\"\",\n        linebetweenrows=None,\n        linebelow=Line(\"</tbody>\\n</table>\", \"\", \"\", \"\"),\n        headerrow=partial(_html_row_with_attrs, \"th\", False),\n        datarow=partial(_html_row_with_attrs, \"td\", False),\n        padding=0,\n        with_header_hide=[\"lineabove\"],\n    ),\n    \"unsafehtml\": TableFormat(\n        lineabove=_html_begin_table_without_header,\n        linebelowheader=\"\",\n        linebetweenrows=None,\n        linebelow=Line(\"</tbody>\\n</table>\", \"\", \"\", \"\"),\n        headerrow=partial(_html_row_with_attrs, \"th\", True),\n        datarow=partial(_html_row_with_attrs, \"td\", True),\n        padding=0,\n        with_header_hide=[\"lineabove\"],\n    ),\n    \"latex\": TableFormat(\n        lineabove=_latex_line_begin_tabular,\n        linebelowheader=Line(\"\\\\hline\", \"\", \"\", \"\"),\n        linebetweenrows=None,\n        linebelow=Line(\"\\\\hline\\n\\\\end{tabular}\", \"\", \"\", \"\"),\n        headerrow=_latex_row,\n        datarow=_latex_row,\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"latex_raw\": TableFormat(\n        lineabove=_latex_line_begin_tabular,\n        linebelowheader=Line(\"\\\\hline\", \"\", \"\", \"\"),\n        linebetweenrows=None,\n        linebelow=Line(\"\\\\hline\\n\\\\end{tabular}\", \"\", \"\", \"\"),\n        headerrow=partial(_latex_row, escrules={}),\n        datarow=partial(_latex_row, escrules={}),\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"latex_booktabs\": TableFormat(\n        lineabove=partial(_latex_line_begin_tabular, booktabs=True),\n        linebelowheader=Line(\"\\\\midrule\", \"\", \"\", \"\"),\n        linebetweenrows=None,\n        linebelow=Line(\"\\\\bottomrule\\n\\\\end{tabular}\", \"\", \"\", \"\"),\n        headerrow=_latex_row,\n        datarow=_latex_row,\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"latex_longtable\": TableFormat(\n        lineabove=partial(_latex_line_begin_tabular, longtable=True),\n        linebelowheader=Line(\"\\\\hline\\n\\\\endhead\", \"\", \"\", \"\"),\n        linebetweenrows=None,\n        linebelow=Line(\"\\\\hline\\n\\\\end{longtable}\", \"\", \"\", \"\"),\n        headerrow=_latex_row,\n        datarow=_latex_row,\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"tsv\": TableFormat(\n        lineabove=None,\n        linebelowheader=None,\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"\", \"\\t\", \"\"),\n        datarow=DataRow(\"\", \"\\t\", \"\"),\n        padding=0,\n        with_header_hide=None,\n    ),\n    \"textile\": TableFormat(\n        lineabove=None,\n        linebelowheader=None,\n        linebetweenrows=None,\n        linebelow=None,\n        headerrow=DataRow(\"|_. \", \"|_.\", \"|\"),\n        datarow=_textile_row_with_attrs,\n        padding=1,\n        with_header_hide=None,\n    ),\n    \"asciidoc\": TableFormat(\n        lineabove=partial(_asciidoc_row, False),\n        linebelowheader=None,\n        linebetweenrows=None,\n        linebelow=Line(\"|====\", \"\", \"\", \"\"),\n        headerrow=partial(_asciidoc_row, True),\n        datarow=partial(_asciidoc_row, False),\n        padding=1,\n        with_header_hide=[\"lineabove\"],\n    ),\n}\n\n\ntabulate_formats = list(sorted(_table_formats.keys()))\n\n# The table formats for which multiline cells will be folded into subsequent\n# table rows. The key is the original format specified at the API. The value is\n# the format that will be used to represent the original format.\nmultiline_formats = {\n    \"plain\": \"plain\",\n    \"simple\": \"simple\",\n    \"grid\": \"grid\",\n    \"simple_grid\": \"simple_grid\",\n    \"rounded_grid\": \"rounded_grid\",\n    \"heavy_grid\": \"heavy_grid\",\n    \"mixed_grid\": \"mixed_grid\",\n    \"double_grid\": \"double_grid\",\n    \"fancy_grid\": \"fancy_grid\",\n    \"colon_grid\": \"colon_grid\",\n    \"pipe\": \"pipe\",\n    \"orgtbl\": \"orgtbl\",\n    \"jira\": \"jira\",\n    \"presto\": \"presto\",\n    \"pretty\": \"pretty\",\n    \"psql\": \"psql\",\n    \"rst\": \"rst\",\n    \"outline\": \"outline\",\n    \"simple_outline\": \"simple_outline\",\n    \"rounded_outline\": \"rounded_outline\",\n    \"heavy_outline\": \"heavy_outline\",\n    \"mixed_outline\": \"mixed_outline\",\n    \"double_outline\": \"double_outline\",\n    \"fancy_outline\": \"fancy_outline\",\n    \"github\": \"github\",\n}\n\n# TODO: Add multiline support for the remaining table formats:\n#       - mediawiki: Replace \\n with <br>\n#       - moinmoin: TBD\n#       - youtrack: TBD\n#       - html: Replace \\n with <br>\n#       - latex*: Use \"makecell\" package: In header, replace X\\nY with\n#         \\thead{X\\\\Y} and in data row, replace X\\nY with \\makecell{X\\\\Y}\n#       - tsv: TBD\n#       - textile: Replace \\n with <br/> (must be well-formed XML)\n\n_multiline_codes = re.compile(r\"\\r|\\n|\\r\\n\")\n_multiline_codes_bytes = re.compile(b\"\\r|\\n|\\r\\n\")\n\n# Handle ANSI escape sequences for both control sequence introducer (CSI) and\n# operating system command (OSC). Both of these begin with 0x1b (or octal 033),\n# which will be shown below as ESC.\n#\n# CSI ANSI escape codes have the following format, defined in section 5.4 of ECMA-48:\n#\n# CSI: ESC followed by the '[' character (0x5b)\n# Parameter Bytes: 0..n bytes in the range 0x30-0x3f\n# Intermediate Bytes: 0..n bytes in the range 0x20-0x2f\n# Final Byte: a single byte in the range 0x40-0x7e\n#\n# Also include the terminal hyperlink sequences as described here:\n# https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda\n#\n# OSC 8 ; params ; uri ST display_text OSC 8 ;; ST\n#\n# Example: \\x1b]8;;https://example.com\\x5ctext to show\\x1b]8;;\\x5c\n#\n# Where:\n# OSC: ESC followed by the ']' character (0x5d)\n# params: 0..n optional key value pairs separated by ':' (e.g. foo=bar:baz=qux:abc=123)\n# URI: the actual URI with protocol scheme (e.g. https://, file://, ftp://)\n# ST: ESC followed by the '\\' character (0x5c)\n_esc = r\"\\x1b\"\n_csi = rf\"{_esc}\\[\"\n_osc = rf\"{_esc}\\]\"\n_st = rf\"{_esc}\\\\\"\n\n_ansi_escape_pat = rf\"\"\"\n    (\n        # terminal colors, etc\n        {_csi}        # CSI\n        [\\x30-\\x3f]*  # parameter bytes\n        [\\x20-\\x2f]*  # intermediate bytes\n        [\\x40-\\x7e]   # final byte\n    |\n        # terminal hyperlinks\n        {_osc}8;        # OSC opening\n        (\\w+=\\w+:?)*    # key=value params list (submatch 2)\n        ;               # delimiter\n        ([^{_esc}]+)    # URI - anything but ESC (submatch 3)\n        {_st}           # ST\n        ([^{_esc}]+)    # link text - anything but ESC (submatch 4)\n        {_osc}8;;{_st}  # \"closing\" OSC sequence\n    )\n\"\"\"\n_ansi_codes = re.compile(_ansi_escape_pat, re.VERBOSE)\n_ansi_codes_bytes = re.compile(_ansi_escape_pat.encode(\"utf8\"), re.VERBOSE)\n_ansi_color_reset_code = \"\\033[0m\"\n\n_float_with_thousands_separators = re.compile(\n    r\"^(([+-]?[0-9]{1,3})(?:,([0-9]{3}))*)?(?(1)\\.[0-9]*|\\.[0-9]+)?$\"\n)\n\n\ndef simple_separated_format(separator):\n    \"\"\"Construct a simple TableFormat with columns separated by a separator.\n\n    >>> tsv = simple_separated_format(\"\\\\t\") ; \\\n        tabulate([[\"foo\", 1], [\"spam\", 23]], tablefmt=tsv) == 'foo \\\\t 1\\\\nspam\\\\t23'\n    True\n\n    \"\"\"\n    return TableFormat(\n        None,\n        None,\n        None,\n        None,\n        headerrow=DataRow(\"\", separator, \"\"),\n        datarow=DataRow(\"\", separator, \"\"),\n        padding=0,\n        with_header_hide=None,\n    )\n\n\ndef _isnumber_with_thousands_separator(string):\n    \"\"\"\n    >>> _isnumber_with_thousands_separator(\".\")\n    False\n    >>> _isnumber_with_thousands_separator(\"1\")\n    True\n    >>> _isnumber_with_thousands_separator(\"1.\")\n    True\n    >>> _isnumber_with_thousands_separator(\".1\")\n    True\n    >>> _isnumber_with_thousands_separator(\"1000\")\n    False\n    >>> _isnumber_with_thousands_separator(\"1,000\")\n    True\n    >>> _isnumber_with_thousands_separator(\"1,0000\")\n    False\n    >>> _isnumber_with_thousands_separator(\"1,000.1234\")\n    True\n    >>> _isnumber_with_thousands_separator(b\"1,000.1234\")\n    True\n    >>> _isnumber_with_thousands_separator(\"+1,000.1234\")\n    True\n    >>> _isnumber_with_thousands_separator(\"-1,000.1234\")\n    True\n    \"\"\"\n    try:\n        string = string.decode()\n    except (UnicodeDecodeError, AttributeError):\n        pass\n\n    return bool(re.match(_float_with_thousands_separators, string))\n\n\ndef _isconvertible(conv, string):\n    try:\n        conv(string)\n        return True\n    except (ValueError, TypeError):\n        return False\n\n\ndef _isnumber(string):\n    \"\"\"Detects if something *could* be considered a numeric value, vs. just a string.\n\n    This promotes types convertible to both int and float to be considered\n    a float.  Note that, iff *all* values appear to be some form of numeric\n    value such as eg. \"1e2\", they would be considered numbers!\n\n    The exception is things that appear to be numbers but overflow to\n    +/-inf, eg. \"1e23456\"; we'll have to exclude them explicitly.\n\n    >>> _isnumber(123)\n    True\n    >>> _isnumber(123.45)\n    True\n    >>> _isnumber(\"123.45\")\n    True\n    >>> _isnumber(\"123\")\n    True\n    >>> _isnumber(\"spam\")\n    False\n    >>> _isnumber(\"123e45\")\n    True\n    >>> _isnumber(\"123e45678\")  # evaluates equal to 'inf', but ... isn't\n    False\n    >>> _isnumber(\"inf\")\n    True\n    >>> from fractions import Fraction\n    >>> _isnumber(Fraction(1,3))\n    True\n\n    \"\"\"\n    return (\n        # fast path\n        type(string) in (float, int)\n        # covers 'NaN', +/- 'inf', and eg. '1e2', as well as any type\n        # convertible to int/float.\n        or (\n            _isconvertible(float, string)\n            and (\n                # some other type convertible to float\n                not isinstance(string, (str, bytes))\n                # or, a numeric string eg. \"1e1...\", \"NaN\", ..., but isn't\n                # just an over/underflow\n                or (\n                    not (math.isinf(float(string)) or math.isnan(float(string)))\n                    or string.lower() in [\"inf\", \"-inf\", \"nan\"]\n                )\n            )\n        )\n    )\n\n\ndef _isint(string, inttype=int):\n    \"\"\"\n    >>> _isint(\"123\")\n    True\n    >>> _isint(\"123.45\")\n    False\n    \"\"\"\n    return (\n        type(string) is inttype\n        or (\n            (hasattr(string, \"is_integer\") or hasattr(string, \"__array__\"))\n            and "
+          }
+        ],
+        "rationale": "github 格式未注册在 multiline_formats 中，因此多行单元格不会被折叠成后续行。将其加入映射即可启用已有的多行处理逻辑。",
+        "truncated": true
+      },
+      "timeline": [
+        {
+          "ts": "2026-11-25T16:36:40+08:00",
+          "event": "run_start",
+          "interface": "authoring",
+          "protocol": "single-shot",
+          "provider": "deepseek",
+          "model": "deepseek-chat"
+        },
+        {
+          "ts": "2026-11-25T16:36:42+08:00",
+          "event": "model_response",
+          "seat": "proposer",
+          "attempt": 1,
+          "provider": "deepseek",
+          "model": "deepseek-flash",
+          "latency_ms": 1528,
+          "degraded": true,
+          "finish_reason": "stop",
+          "tokens": 33663
+        },
+        {
+          "ts": "2026-11-25T16:36:43+08:00",
+          "event": "gate_report",
+          "attempt": 1,
+          "all_green": true,
+          "gate_total": 4,
+          "gate_failed": 0,
+          "signature": "tests:1|lint:1|api:1|diff:1"
+        },
+        {
+          "ts": "2026-11-25T16:36:43+08:00",
+          "event": "run_end",
+          "calls": 1,
+          "rounds": 1,
+          "outcome": "accepted",
+          "tokens": 33663
+        }
+      ]
+    },
+    {
       "run_id": "run-5517201127",
       "task_id": "tabulate-362",
       "started_at": "2026-11-25T16:11:56+08:00",
@@ -420,6 +538,7 @@
         ]
       },
       "events": 12,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T16:11:56+08:00",
@@ -584,6 +703,7 @@
         ]
       },
       "events": 13,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T16:10:13+08:00",
@@ -753,6 +873,7 @@
         ]
       },
       "events": 14,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T16:08:35+08:00",
@@ -931,6 +1052,7 @@
         ]
       },
       "events": 12,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T16:04:01+08:00",
@@ -1095,6 +1217,7 @@
         ]
       },
       "events": 14,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T16:02:25+08:00",
@@ -1273,6 +1396,7 @@
         ]
       },
       "events": 14,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T16:00:37+08:00",
@@ -1450,6 +1574,7 @@
         ]
       },
       "events": 12,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:55:01+08:00",
@@ -1614,6 +1739,7 @@
         ]
       },
       "events": 13,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:53:15+08:00",
@@ -1783,6 +1909,7 @@
         ]
       },
       "events": 12,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:52:16+08:00",
@@ -1901,6 +2028,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 8,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:47:18+08:00",
@@ -1987,6 +2115,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 8,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:42:55+08:00",
@@ -2073,6 +2202,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 8,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:39:25+08:00",
@@ -2159,6 +2289,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 6,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:29:15+08:00",
@@ -2232,6 +2363,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:23:02+08:00",
@@ -2337,6 +2469,7 @@
         ]
       },
       "events": 9,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:15:33+08:00",
@@ -2478,6 +2611,7 @@
         ]
       },
       "events": 14,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T15:10:06+08:00",
@@ -2662,6 +2796,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:51:23+08:00",
@@ -2799,6 +2934,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:51:19+08:00",
@@ -2938,6 +3074,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:51:16+08:00",
@@ -3075,6 +3212,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:51:11+08:00",
@@ -3212,6 +3350,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:51:08+08:00",
@@ -3349,6 +3488,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:51:05+08:00",
@@ -3486,6 +3626,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:51:00+08:00",
@@ -3623,6 +3764,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:50:56+08:00",
@@ -3760,6 +3902,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:50:52+08:00",
@@ -3897,6 +4040,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:50:47+08:00",
@@ -4035,6 +4179,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:50:43+08:00",
@@ -4173,6 +4318,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:50:40+08:00",
@@ -4312,6 +4458,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:49:47+08:00",
@@ -4449,6 +4596,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:44:16+08:00",
@@ -4570,6 +4718,7 @@
         ]
       },
       "events": 3,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:04:25+08:00",
@@ -4679,6 +4828,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:03:57+08:00",
@@ -4799,6 +4949,7 @@
         ]
       },
       "events": 3,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T14:03:22+08:00",
@@ -4907,6 +5058,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T11:54:41+08:00",
@@ -5045,6 +5197,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T11:54:21+08:00",
@@ -5183,6 +5336,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T11:54:00+08:00",
@@ -5258,6 +5412,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T11:53:35+08:00",
@@ -5318,6 +5473,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 1,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T10:55:45+08:00",
@@ -5350,6 +5506,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 1,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T10:55:12+08:00",
@@ -5382,6 +5539,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 1,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T10:54:16+08:00",
@@ -5414,6 +5572,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 1,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T10:53:45+08:00",
@@ -5510,6 +5669,7 @@
         ]
       },
       "events": 5,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T10:53:17+08:00",
@@ -5597,6 +5757,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T10:51:35+08:00",
@@ -5657,6 +5818,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T10:50:41+08:00",
@@ -5767,6 +5929,7 @@
         ]
       },
       "events": 3,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-25T10:44:11+08:00",
@@ -5874,6 +6037,7 @@
         ]
       },
       "events": 7,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T18:13:56+08:00",
@@ -6005,6 +6169,7 @@
         ]
       },
       "events": 12,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T18:10:57+08:00",
@@ -6180,6 +6345,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:48:12+08:00",
@@ -6322,6 +6488,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:47:12+08:00",
@@ -6464,6 +6631,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:46:37+08:00",
@@ -6607,6 +6775,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:46:31+08:00",
@@ -6749,6 +6918,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:46:22+08:00",
@@ -6892,6 +7062,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:46:13+08:00",
@@ -7034,6 +7205,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:46:09+08:00",
@@ -7176,6 +7348,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:46:06+08:00",
@@ -7318,6 +7491,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:46:01+08:00",
@@ -7461,6 +7635,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:45:09+08:00",
@@ -7604,6 +7779,7 @@
         ]
       },
       "events": 5,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:42:32+08:00",
@@ -7759,6 +7935,7 @@
         ]
       },
       "events": 5,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:40:25+08:00",
@@ -7915,6 +8092,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:40:15+08:00",
@@ -8058,6 +8236,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:40:05+08:00",
@@ -8202,6 +8381,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:39:55+08:00",
@@ -8347,6 +8527,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:39:52+08:00",
@@ -8492,6 +8673,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:39:48+08:00",
@@ -8637,6 +8819,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:39:45+08:00",
@@ -8779,6 +8962,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:38:43+08:00",
@@ -8919,6 +9103,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:38:20+08:00",
@@ -9059,6 +9244,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:38:12+08:00",
@@ -9199,6 +9385,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:38:09+08:00",
@@ -9272,6 +9459,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 3,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:36:43+08:00",
@@ -9389,6 +9577,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:34:44+08:00",
@@ -9531,6 +9720,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:34:34+08:00",
@@ -9674,6 +9864,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:34:30+08:00",
@@ -9814,6 +10005,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:34:09+08:00",
@@ -9955,6 +10147,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T17:33:57+08:00",
@@ -10095,6 +10288,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T16:45:06+08:00",
@@ -10239,6 +10433,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T16:42:29+08:00",
@@ -10383,6 +10578,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-24T16:42:12+08:00",
@@ -10524,6 +10720,7 @@
         ]
       },
       "events": 4,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-23T10:02:29+08:00",
@@ -10648,6 +10845,7 @@
         ]
       },
       "events": 5,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-22T17:03:26+08:00",
@@ -10756,6 +10954,7 @@
         ]
       },
       "events": 5,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-22T17:02:59+08:00",
@@ -10862,6 +11061,7 @@
         ]
       },
       "events": 5,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-22T17:02:20+08:00",
@@ -10918,6 +11118,7 @@
       "gate_signature": null,
       "gate": null,
       "events": 1,
+      "patch": null,
       "timeline": [
         {
           "ts": "2026-11-22T17:02:03+08:00",

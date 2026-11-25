@@ -9,6 +9,8 @@ web/
   index.html          工作台主页面（数据驱动）
   style.html          活样式表：颜色、字体、组件各状态
   build-data.py       构建期脚本：读 tasks/ 与 runs/audit.jsonl → data/site.{json,js}
+  check.mjs           回归脚本：自起静态服务 + headless Chrome，跑真实交互断言
+  tools/serve_web.py  本地预览服务器（只读静态文件）
   data/
     site.json         生成的数据（给工具、论文、人工检查）
     site.js           同一份数据包成 window.__DBW_DATA__（页面直接读，file:// 也能用）
@@ -24,11 +26,28 @@ web/
 ## 跑起来
 
 ```bash
-python web/build-data.py      # 先有数据（读 tasks/ 与 runs/）
-python scripts/serve_web.py   # 起预览；或直接双击 index.html
+python web/build-data.py              # 先有数据（读 tasks/ 与 runs/）
+python web/tools/serve_web.py         # 起预览；或直接双击 index.html
+node web/check.mjs                    # 回归（需要本机 Chrome）
 ```
 
 改了 `tasks/`、跑过新的 `runs/` 之后，重跑一次 `build-data.py` 再刷新页面。
+
+## 回归脚本
+
+`check.mjs` 自带静态服务 + fixture 注入 + headless Chrome（CDP），零依赖：
+
+```bash
+node web/check.mjs                   # 全部用例
+node web/check.mjs --filter patch    # 只跑名字里带 patch 的
+CHROME_PATH=/path/to/chrome node web/check.mjs
+```
+
+覆盖：概览数字、任务详情与时间轴、运行列表筛选与搜索、键盘（`/`、`↑↓`、`End`）、
+运行详情闸门与时间线、运行对比、CSV 导出、**缺失补丁文件不崩**、打印媒体、未捕获异常。
+
+fixture 是把真实 `site.json` 改一处再注入 `index.html`（替换 `data/site.js`），
+所以能测"patch_path 指向的文件不存在"这类在真实数据里不好等到的状态。
 
 ## 页面结构（hash 路由）
 
@@ -40,7 +59,7 @@ python scripts/serve_web.py   # 起预览；或直接双击 index.html
 | `#/tasks` | 任务列表 | `tasks[]` |
 | `#/tasks/<id>` | 任务详情：契约字段、契约原文、运行时间轴 + 运行表、按模型汇总 | `tasks[]` + `runs[]` 按 `task_id` 过滤 |
 | `#/runs` | 运行列表：按结果筛选（全部 / 交付成立 / 驳回 / 未记录） | `runs[]` |
-| `#/runs/<id>` | 运行详情：元信息、闸门逐项判定、事件时间线 | `runs[].gate`、`runs[].timeline` |
+| `#/runs/<id>` | 运行详情：元信息、闸门逐项判定、补丁（有则显示）、事件时间线 | `runs[].gate`、`runs[].patch`、`runs[].timeline` |
 | `#/runs/compare?a=<id>&b=<id>` | 两次运行对比：元信息与四类闸门逐行对照 | `runs[]` 里的两条 |
 
 路由不存在时回到概览；`task` / `run` 找不到时给"找不到 + 回列表"的提示，不白屏。
@@ -54,6 +73,7 @@ python scripts/serve_web.py   # 起预览；或直接双击 index.html
 ```
 
 快捷键（只在运行列表）：`/` 聚焦搜索、`Esc` 清空、`↑↓` 在行间移动、`Enter` 打开、`Home/End` 跳到首末行。
+任务详情与运行详情里 `c` 直接对比：任务页比最近两次，运行页比上一次同任务运行。
 
 对比不用手填 id：运行详情页顶部有「与上一次同任务运行对比」，自动取这个任务的上一条运行。
 
@@ -68,6 +88,18 @@ outcome, tokens, calls, duration_ms, all_green, tests, lint, api, diff
 
 闸门列取值 `pass` / `fail` / 空（没有判定）。文件带 UTF-8 BOM + CRLF，Excel 直接打开不乱码。
 导出在浏览器里生成，不经过任何服务端。
+
+## 补丁
+
+`run_end.patch_path` 指向 `runs/patches/<run_id>.json`，构建时读进来：
+
+```json
+{ "files": { "tabulate/__init__.py": "<完整文件内容>" }, "rationale": "…" }
+```
+
+- 单文件最多 30k 字符、合计 60k，超出截断并标 `truncated`
+- 文件不存在时 `patch.available = false`，页面显示路径与原因，不当成错误
+- 旧 run 既没有 `patch_path` 也没有对应文件时 `patch = null`，页面不出现「补丁」一节
 
 ## 打印
 
