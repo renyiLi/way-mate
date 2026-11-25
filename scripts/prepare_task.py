@@ -97,7 +97,10 @@ def prepare(task_dir: Path, out: Path, python: str, verify: bool) -> dict:
 
     if verify:
         contract = load_contract(out / "contract.yaml")
-        cmd = [python, "-m", "pytest", recipe["target_test"], "-q"]
+        targets = recipe["target_test"]
+        if isinstance(targets, str):
+            targets = [targets]
+        cmd = [python, "-m", "pytest", *targets, "-q"]
         print(f"  校验：{recipe['target_test']} 在旧源码上应当失败")
         run = subprocess.run(
             cmd, cwd=str(out), capture_output=True, text=True, encoding="utf-8", errors="replace"

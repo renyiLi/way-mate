@@ -1,0 +1,22 @@
+{
+  "id": "tabulate-386",
+  "repo": "https://github.com/astanin/python-tabulate",
+  "base_sha": "8ca340f59e079e3b513068c76be9654205350542",
+  "pull_request": 386,
+  "title": "asciidoc 表格的列对齐标记顺序写反",
+  "statement": "用 tabulate 渲染 asciidoc 格式的表格时，生成的列格式说明（cols=\"...\"）里对齐符号和宽度的顺序是反的，导致渲染出来的表格列宽和对齐都不对。无表头的表格同样受影响。请修正 asciidoc 列说明的生成顺序。",
+  "target_test": [
+    "test/test_output.py::test_asciidoc",
+    "test/test_output.py::test_asciidoc_headerless"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": ["tabulate/__init__.py"],
+  "forbidden": ["test/"],
+  "tier": "medium",
+  "solution_note": "上游修法是把 f\"{width}{align}\" 改成 f\"{align}{width}\"，statement 只说顺序反了，不给具体代码。",
+  "verified": {
+    "red_without_fix": "2 failed, 176 passed, 21 skipped",
+    "green_with_fix": "178 passed, 21 skipped",
+    "fix_size": "4 行改动"
+  }
+}
