@@ -1,0 +1,24 @@
+{
+  "id": "tabulate-410",
+  "repo": "https://github.com/astanin/python-tabulate",
+  "base_sha": "26ccb780f4ae05995485e6f3199bcc5f7214decf",
+  "pull_request": 410,
+  "title": "github 表格的分隔行缺少对齐冒号",
+  "statement": "用 tablefmt=\"github\" 渲染表格时，分隔行只输出横线（如 |-----------|），没有按列对齐方式写出冒号（应为 |:----------|----------:| 这种形式），因此 GitHub 渲染出来的表格没有对齐。同时，使用同一种分隔行风格的自定义格式（无表头 + 分隔行）也出现同样问题。请让 github 格式的输出符合 GitHub 的表格对齐规则。",
+  "target_test": [
+    "test/test_output.py::test_simple_headerless_with_sep_line_with_padding_in_tablefmt",
+    "test/test_output.py::test_github",
+    "test/test_output.py::test_github_multiline",
+    "test/test_output.py::test_github_with_colalign"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": ["tabulate/__init__.py"],
+  "forbidden": ["test/"],
+  "tier": "hard",
+  "solution_note": "上游修法是把 github 格式改为 pipe 格式的别名（pipe 本就输出对齐冒号）；statement 只描述症状与期望格式，不提示复用 pipe。",
+  "verified": {
+    "red_without_fix": "4 failed, 176 passed, 21 skipped",
+    "green_with_fix": "180 passed, 21 skipped",
+    "fix_size": "删除 10 行、新增 4 行"
+  }
+}
