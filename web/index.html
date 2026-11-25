@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>随行交付台 — 模型可以争论，闸门说了算</title>
+<meta name="description" content="以可执行验收契约为中心的多角色协作代码交付系统：模型交出补丁，四类闸门逐项判定，全绿才算交付。">
+<meta name="theme-color" content="#E8E9E2">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23A82C1B'/%3E%3Crect x='4' y='4' width='24' height='24' fill='none' stroke='%23F4F4EE' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/fonts/archivo.css">
+<link rel="stylesheet" href="assets/fonts/plex.css">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body id="top">
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="#top">
+      <span class="brand-seal" aria-hidden="true">验</span>
+      <span class="brand-name">随行交付台</span>
+      <span class="brand-meta">delivery-bench v0.2</span>
+    </a>
+    <nav class="nav" aria-label="页面段落">
+      <a href="#claim">主张</a>
+      <a href="#roster">排班</a>
+      <a href="#gates">闸门</a>
+      <a href="#records">记录</a>
+    </nav>
+    <p class="status"><span class="status-dot" aria-hidden="true"></span>离线可跑 · 0 API Key</p>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="claim">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="clause"><span>第 1 条</span>主张</p>
+        <h1 class="hero-title">模型可以争论，<br>闸门说了算。</h1>
+        <p class="hero-lead">契约不是一纸文档，是能跑起来的验收标准。模型交出整文件补丁，四类闸门逐项判定——<strong>全绿才算交付</strong>，模型的自述不算数。</p>
+        <div class="hero-actions">
+          <button class="btn btn-ink" id="run-gate" type="button">跑一次闸门</button>
+          <a class="btn btn-ghost" href="#contract">读契约原文</a>
+        </div>
+        <dl class="facts">
+          <div><dt>离线测试</dt><dd>30</dd></div>
+          <div><dt>闸门</dt><dd>4</dd></div>
+          <div><dt>座位</dt><dd>3</dd></div>
+          <div><dt>端点 / 模型</dt><dd>2<i>/</i>4</dd></div>
+        </dl>
+      </div>
+
+      <aside class="board" aria-labelledby="board-title">
+        <div class="board-head">
+          <h2 class="board-title" id="board-title">判定板</h2>
+          <p class="board-tag">单轮 · 离线</p>
+        </div>
+        <p class="board-task">fix-parser-inline-comment</p>
+
+        <ol class="checks" id="checks">
+          <li class="check" data-state="idle">
+            <span class="lamp" aria-hidden="true"></span>
+            <span class="check-name">tests</span>
+            <span class="check-desc">验收命令 exit 0</span>
+            <span class="check-value" data-value="5 passed">待判定</span>
+          </li>
+          <li class="check" data-state="idle">
+            <span class="lamp" aria-hidden="true"></span>
+            <span class="check-name">lint</span>
+            <span class="check-desc">新增问题 ≤ max_new</span>
+            <span class="check-value" data-value="0 new">待判定</span>
+          </li>
+          <li class="check" data-state="idle">
+            <span class="lamp" aria-hidden="true"></span>
+            <span class="check-name">api</span>
+            <span class="check-desc">冻结符号仍在</span>
+            <span class="check-value" data-value="1 / 1 在">待判定</span>
+          </li>
+          <li class="check" data-state="idle">
+            <span class="lamp" aria-hidden="true"></span>
+            <span class="check-name">diff</span>
+            <span class="check-desc">预算 5 文件 / 120 行</span>
+            <span class="check-value" data-value="1 文件 · 18 行">待判定</span>
+          </li>
+        </ol>
+
+        <div class="board-foot" aria-live="polite">
+          <div class="board-count-wrap">
+            <p class="board-count"><b id="fail-count">—</b> 项未通过</p>
+            <p class="board-sub" id="board-sub">尚未判定</p>
+          </div>
+          <button class="seal" id="seal" type="button" title="盖章" aria-label="给这份判定盖章">
+            <span>可交付</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <div class="tape" aria-hidden="true"></div>
+
+  <section class="band" id="roster">
+    <div class="wrap band-grid">
+      <p class="clause"><span>第 2 条</span>排班</p>
+      <div class="band-body">
+        <h2>座位固定，人数可变</h2>
+        <p class="lead">接口数量不等于流程数量。提案、复核、裁决三个座位永远在；模型数量只决定一个模型能不能兼两个座位。所以 2 人与 3 人不是两套流程，是同一台状态机的两种排班。</p>
+
+        <div class="seg" role="tablist" aria-label="协议排班">
+          <button class="seg-btn is-on" type="button" role="tab" aria-selected="true" data-proto="2p.single">2p.single<em>两人</em></button>
+          <button class="seg-btn" type="button" role="tab" aria-selected="false" data-proto="3p.single">3p.single<em>三人</em></button>
+          <button class="seg-btn" type="button" role="tab" aria-selected="false" data-proto="3p.dual">3p.dual<em>双提案</em></button>
+        </div>
+
+        <div class="seats" id="seats">
+          <article class="seat">
+            <h3>提案</h3>
+            <p class="seat-job">产出整文件补丁</p>
+            <ul class="chips" data-slot="propose"></ul>
+          </article>
+          <article class="seat">
+            <h3>复核</h3>
+            <p class="seat-job">产出契约违反清单</p>
+            <ul class="chips" data-slot="review"></ul>
+          </article>
+          <article class="seat">
+            <h3>裁决</h3>
+            <p class="seat-job">在两份提案之间选一份</p>
+            <ul class="chips" data-slot="arbitrate"></ul>
+          </article>
+        </div>
+
+        <p class="arbiter"><span>谁消解分歧</span><b id="arbiter">只能交给闸门——没有第三方</b></p>
+        <p class="iron">铁律贯穿全部协议：模型之间可以争论，但不能投票决定合不合格。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="gates">
+    <div class="wrap band-grid">
+      <p class="clause"><span>第 3 条</span>闸门</p>
+      <div class="band-body">
+        <h2>四个闸门，只回答“过没过”</h2>
+        <p class="lead">闸门不解释、不建议、不参与讨论。每项只输出一个布尔值和一组结构化指标，直接落进审计日志——论文里的数据就是从这里出去的。</p>
+
+        <div class="gates">
+          <article class="gate">
+            <div class="gate-head"><span class="gate-code">tests</span><span class="gate-tag">功能</span></div>
+            <h3>验收命令全绿</h3>
+            <dl>
+              <div><dt>判什么</dt><dd>契约里每条验收命令的退出码全部为 0</dd></div>
+              <div><dt>防什么</dt><dd>功能压根没做对</dd></div>
+              <div><dt>本轮</dt><dd class="mono">pytest -q → 5 passed</dd></div>
+            </dl>
+          </article>
+
+          <article class="gate">
+            <div class="gate-head"><span class="gate-code">lint</span><span class="gate-tag">整洁</span></div>
+            <h3>新增问题不超预算</h3>
+            <dl>
+              <div><dt>判什么</dt><dd>打补丁后的告警数减去补丁前基线 ≤ max_new</dd></div>
+              <div><dt>防什么</dt><dd>越改越乱</dd></div>
+              <div><dt>本轮</dt><dd class="mono">baseline 0 → 0，new 0</dd></div>
+            </dl>
+          </article>
+
+          <article class="gate">
+            <div class="gate-head"><span class="gate-code">api</span><span class="gate-tag">接口</span></div>
+            <h3>冻结的符号还在</h3>
+            <dl>
+              <div><dt>判什么</dt><dd>契约冻结的公开符号逐个 import，一个都不能少</dd></div>
+              <div><dt>防什么</dt><dd>顺手破坏外部接口</dd></div>
+              <div><dt>本轮</dt><dd class="mono">pkg.parser.parse_kv 仍在</dd></div>
+            </dl>
+          </article>
+
+          <article class="gate">
+            <div class="gate-head"><span class="gate-code">diff</span><span class="gate-tag">边界</span></div>
+            <h3>改动不越界</h3>
+            <dl>
+              <div><dt>判什么</dt><dd>文件数、行数在预算内，且没碰禁止路径</dd></div>
+              <div><dt>防什么</dt><dd>大面积重写，以及改测试代替改代码</dd></div>
+              <div><dt>本轮</dt><dd class="mono">1 文件 · 18 行（预算 5 / 120）</dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <details class="contract" id="contract">
+          <summary>契约原文 · fixtures/repo_a/contract.yaml</summary>
+          <pre><code><span class="k">task_id</span>: fix-parser-inline-comment
+
+<span class="k">doD</span>:
+  <span class="k">tests</span>:
+    - <span class="k">cmd</span>: pytest tests/test_parser.py -q
+      <span class="k">timeout_s</span>: 120
+  <span class="k">lint</span>:
+    <span class="k">tool</span>: ruff
+    <span class="k">max_new</span>: 0
+  <span class="k">api</span>:
+    <span class="k">frozen</span>:
+      - pkg.parser.parse_kv
+  <span class="c"># 从 pytest.raises(match=...) 提取，人工确认后写入</span>
+  <span class="k">exact</span>:
+    - <span class="k">exception</span>: ValueError
+      <span class="k">contains</span>: <span class="s">"missing '='"</span>
+      <span class="k">source</span>: <span class="s">"tests/test_parser.py:25"</span>
+      <span class="k">origin</span>: auto
+  <span class="k">diff</span>:
+    <span class="k">max_files</span>: 5
+    <span class="k">max_lines</span>: 120
+    <span class="k">forbid</span>:
+      - tests/
+
+<span class="k">loop</span>:
+  <span class="k">repair_rounds</span>: 3
+  <span class="k">stop_on</span>: all_green
+  <span class="k">on_exhausted</span>: escalate_to_human</code></pre>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="records">
+    <div class="wrap band-grid">
+      <p class="clause"><span>第 4 条</span>记录</p>
+      <div class="band-body">
+        <h2>同一道题，四个模型</h2>
+        <p class="lead">任务 <span class="mono">fix-parser-inline-comment</span>，同一份契约，单轮结果。失败的原因不是“模型不行”，而是它把异常消息改写成了更好读的中文——而契约要求包含 <span class="mono">missing '='</span>。</p>
+
+        <div class="records">
+          <div class="table-scroll">
+            <table>
+              <caption class="sr-only">四个模型在同一契约下的单轮交付结果</caption>
+              <thead>
+                <tr><th scope="col">端点 / 模型</th><th scope="col">结果</th><th scope="col">耗时</th><th scope="col">token</th><th scope="col">写明断言</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="mono">deepseek · deepseek-chat</td><td><i class="dot dot-pass"></i>通过</td><td class="mono">2.1 s</td><td class="mono">996</td><td>是</td></tr>
+                <tr><td class="mono">ark · kimi-k3-1-pro</td><td><i class="dot dot-pass"></i>通过</td><td class="mono">54.8 s</td><td class="mono">2746</td><td>是</td></tr>
+                <tr><td class="mono">ark · deepseek-v4-1-flash</td><td><i class="dot dot-fail"></i>驳回</td><td class="mono">4.8 s</td><td class="mono">1502</td><td>否</td></tr>
+                <tr><td class="mono">ark · doubao-seed-2-1-pro</td><td><i class="dot dot-fail"></i>驳回</td><td class="mono">155.2 s</td><td class="mono">6010</td><td>否</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <aside class="aside">
+            <h3>把断言提进契约之后</h3>
+            <ul class="findings">
+              <li><b>0/3 → 3/3</b><span>deepseek-chat 从全红变全绿</span></li>
+              <li><b>−58%</b><span>kimi 的 token 与耗时同步下降</span></li>
+              <li><b>3/3 · 3/3</b><span>另两个模型两条件都过，天花效应</span></li>
+            </ul>
+            <p class="aside-note">对照实验 n=3，单任务 fixture。结论只有一句：契约必须把精确断言写成显式条目，不能藏在 traceback 里让人猜。</p>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <p class="foot-line">契约不可替换。</p>
+    <p class="foot-copy">模型是可替换的工人，契约是不可替换的裁判。模型之间可以争论，但只有闸门能宣布交付成立。</p>
+    <nav class="foot-links" aria-label="文档">
+      <a href="../README.md">README</a>
+      <a href="../docs/接口协议.md">接口协议</a>
+      <a href="../docs/任务集-选题与挖掘.md">任务集</a>
+    </nav>
+    <p class="foot-meta">delivery-bench v0.2 · 数据快照 2026-11-24 · <span id="stamp-count">尚未盖章</span></p>
+  </div>
+</footer>
+
+<script src="assets/app.js" defer></script>
+</body>
+</html>

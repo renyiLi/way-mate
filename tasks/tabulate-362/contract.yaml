@@ -1,0 +1,27 @@
+task_id: tabulate-362
+repo: .
+
+doD:
+  tests:
+    - cmd: python -m pytest test/test_textwrapper.py::test_wrap_optional_bool_strs -q
+      timeout_s: 120
+
+  lint:
+    tool: ruff
+    max_new: 0
+
+  api:
+    frozen: []
+
+  exact: []
+
+  diff:
+    max_files: 3
+    max_lines: 40
+    forbid:
+      - test/
+
+loop:
+  repair_rounds: 3
+  stop_on: all_green
+  on_exhausted: escalate_to_human
