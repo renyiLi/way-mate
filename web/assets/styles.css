@@ -82,6 +82,7 @@ button { font: inherit; color: inherit; }
 
 .topbar {
   position: sticky; top: 0; z-index: 50;
+  background: var(--paper);
   background: color-mix(in srgb, var(--paper) 88%, transparent);
   border-bottom: 1px solid var(--rule);
   backdrop-filter: blur(10px);
@@ -203,6 +204,7 @@ button { font: inherit; color: inherit; }
 .btn-ink:active { transform: translateY(0); box-shadow: none; }
 .btn-ghost { background: transparent; color: var(--ink); }
 .btn-ghost:hover { background: var(--ink); color: var(--paper); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .facts {
   margin-top: clamp(34px, 4vw, 52px);
@@ -241,12 +243,31 @@ button { font: inherit; color: inherit; }
 }
 
 .board-task {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
   font-family: var(--mono); font-size: 12.5px; color: var(--muted);
   padding: 4px 0 14px;
   border-bottom: 1px solid var(--ink);
   margin-bottom: 4px;
   overflow-wrap: anywhere;
 }
+.board-task > span:first-child {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink-2);
+}
+.board-meta { font-size: 11px; white-space: nowrap; color: var(--muted); }
+
+.board-replay {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .02em;
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease;
+}
+.board-replay:hover { background: var(--ink); color: var(--paper); }
+.board-replay[hidden] { display: none; }
 
 .check {
   display: grid;
@@ -316,6 +337,7 @@ button { font: inherit; color: inherit; }
   color: var(--seal);
   font-family: var(--sans); font-size: 20px; font-weight: 700;
   letter-spacing: .1em;
+  white-space: nowrap;
   cursor: pointer;
   opacity: 0;
   transform: rotate(-14deg) scale(1.35);
@@ -332,6 +354,7 @@ button { font: inherit; color: inherit; }
   pointer-events: auto;
   mix-blend-mode: multiply;
 }
+.seal.is-wide { font-size: 15px; letter-spacing: .03em; }
 .board.has-verdict .board-foot { padding-right: 96px; }
 
 /* ---------- 警示胶带：全页唯一一处 --------------------------------------- */
@@ -365,6 +388,13 @@ button { font: inherit; color: inherit; }
   margin-bottom: 14px;
 }
 
+.band-head {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 16px 24px;
+}
+.band-head h2 { margin-bottom: 0; }
+.band-head + .lead { margin-top: 16px; }
+
 .lead {
   max-width: 58ch;
   font-size: 16px; line-height: 1.85;
@@ -374,7 +404,7 @@ button { font: inherit; color: inherit; }
 /* ---------- 排班 ---------------------------------------------------------- */
 
 .seg {
-  margin-top: 28px;
+  margin-top: 0;
   display: inline-flex;
   border: 1px solid var(--ink);
   border-radius: 3px;
@@ -403,8 +433,8 @@ button { font: inherit; color: inherit; }
 .seats {
   margin-top: 22px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, .88fr);
+  gap: 12px;
 }
 
 .seat {
@@ -419,6 +449,18 @@ button { font: inherit; color: inherit; }
 .seat h3 { font-size: 15px; font-weight: 700; letter-spacing: .04em; }
 .seat-job { font-size: 12px; line-height: 1.5; color: var(--muted); }
 .seat.is-empty { background: transparent; border-style: dashed; }
+
+.seat-gate {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.seat-gate .seat-job { color: rgba(232, 233, 226, .62); }
+.seat-gate .chip {
+  background: transparent;
+  border-color: rgba(232, 233, 226, .45);
+  color: var(--paper);
+}
 
 .chips {
   margin-top: auto; padding-top: 14px;
@@ -559,10 +601,11 @@ td {
   vertical-align: baseline;
   white-space: nowrap;
 }
+th.num, td.num { text-align: right; padding-right: 0; padding-left: 18px; }
 tbody tr td { transition: background .16s ease; }
 tbody tr:hover td { background: rgba(21, 23, 15, .04); }
 td:first-child { font-family: var(--mono); font-size: 12.5px; }
-td:nth-child(3), td:nth-child(4) { font-variant-numeric: tabular-nums; }
+td.num { font-variant-numeric: tabular-nums; }
 
 .dot {
   display: inline-block; width: 7px; height: 7px; border-radius: 50%;
@@ -603,8 +646,13 @@ td:nth-child(3), td:nth-child(4) { font-variant-numeric: tabular-nums; }
 }
 .foot-in {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, .65fr);
   gap: 32px;
+}
+.foot-right {
+  display: flex; flex-direction: column; align-items: flex-start;
+  justify-content: space-between; gap: 26px;
+  padding-top: 8px;
 }
 .foot-line {
   font-family: var(--display);
@@ -618,7 +666,6 @@ td:nth-child(3), td:nth-child(4) { font-variant-numeric: tabular-nums; }
 }
 .foot-links {
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  padding-top: 6px;
 }
 .foot-links a {
   font-size: 13px; text-decoration: none;
@@ -629,9 +676,98 @@ td:nth-child(3), td:nth-child(4) { font-variant-numeric: tabular-nums; }
 .foot-links a:hover { color: var(--paper); border-bottom-color: var(--paper); }
 .foot-link-group { display: flex; flex-direction: column; gap: 10px; }
 .foot-meta {
-  margin-top: 6px;
   font-family: var(--mono); font-size: 11px; letter-spacing: .02em;
-  color: rgba(232, 233, 226, .48);
+  color: rgba(232, 233, 226, .6);
+}
+
+/* 纸纹：全页一层极淡的噪点，避免大面积纯色发"塑料感" */
+body::after {
+  content: "";
+  position: fixed; inset: 0; z-index: 1;
+  pointer-events: none;
+  opacity: .075;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* ---------- 任务卡（数据驱动） ------------------------------------------- */
+
+.tasks {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.task {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 18px 18px 16px;
+  background: var(--sheet);
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+}
+
+.task-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.task-id { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+.chip-tier {
+  font-family: var(--sans); font-size: 10.5px; letter-spacing: .04em;
+  background: var(--hazard); border-color: var(--hazard); color: var(--ink);
+}
+.task-runs { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+.task h3 { font-size: 18px; line-height: 1.45; font-weight: 700; letter-spacing: .01em; }
+.task-stmt { font-size: 13px; line-height: 1.75; color: var(--ink-2); }
+
+.task-meta { display: grid; gap: 6px; }
+.task-meta > div {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px;
+  align-items: baseline;
+}
+.task-meta dt { font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+.task-meta dd { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); overflow-wrap: anywhere; }
+.task-meta > div.wide { grid-template-columns: minmax(0, 1fr); gap: 1px; }
+
+.task .contract { margin-top: auto; }
+.task-warn { font-size: 12px; color: var(--seal); }
+
+/* ---------- 运行记录表 ---------------------------------------------------- */
+
+table.runs th, table.runs td { padding-right: 10px; }
+table.runs td.nowrap { white-space: nowrap; }
+table.runs tbody tr.is-hidden { display: none; }
+
+.sig { display: inline-flex; gap: 3px; align-items: center; }
+.sig i {
+  display: block; width: 7px; height: 13px;
+  border-radius: 1px;
+  background: var(--rule);
+}
+.sig i.ok { background: var(--pass); }
+.sig i.no { background: var(--seal); }
+
+.table-empty {
+  padding: 22px 0 !important;
+  white-space: normal;
+  font-size: 13px; line-height: 1.8;
+  color: var(--muted);
+}
+
+.runs-foot {
+  margin-top: 14px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.runs-note { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.btn-small { padding: 8px 14px; font-size: 13px; }
+
+.muted { color: var(--muted); }
+.dot-hold { background: var(--hazard); }
+.gate-stat { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+
+.empty {
+  padding: 18px 0;
+  font-size: 13.5px; line-height: 1.8; color: var(--muted);
 }
 
 /* ---------- 响应式 -------------------------------------------------------- */
@@ -641,16 +777,16 @@ td:nth-child(3), td:nth-child(4) { font-variant-numeric: tabular-nums; }
   .board { max-width: 520px; }
   .band-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   .band-grid .clause { padding-top: 0; }
-  .records { grid-template-columns: minmax(0, 1fr); }
+  .tasks { grid-template-columns: minmax(0, 1fr); }
   .foot-in { grid-template-columns: minmax(0, 1fr); gap: 26px; }
   .foot-links { flex-direction: row; flex-wrap: wrap; gap: 16px; padding-top: 0; }
 }
 
 @media (max-width: 720px) {
   .brand-meta, .status { display: none; }
-  .nav { gap: 18px; }
-  .nav a { font-size: 13.5px; }
-  .topbar-in { gap: 16px; }
+  .nav { gap: 14px; }
+  .nav a { font-size: 13.5px; padding: 10px 2px; }
+  .topbar-in { gap: 12px; }
   .seats { grid-template-columns: minmax(0, 1fr); }
   .seat { min-height: 0; }
   .gates { grid-template-columns: minmax(0, 1fr); }
@@ -658,9 +794,12 @@ td:nth-child(3), td:nth-child(4) { font-variant-numeric: tabular-nums; }
   .board { padding: 16px 16px 14px; box-shadow: 5px 5px 0 rgba(21, 23, 15, .12); }
   .check { grid-template-columns: 8px 52px minmax(0, 1fr); row-gap: 2px; }
   .check-value { grid-column: 3; text-align: left; font-size: 11.5px; }
-  .seal { width: 72px; height: 72px; font-size: 17px; right: 2px; bottom: 2px; }
+  .seal { width: 72px; height: 72px; font-size: 15px; letter-spacing: .06em; right: 2px; bottom: 2px; }
+  .seal.is-wide { font-size: 12.5px; letter-spacing: .02em; }
+  .board-task { flex-wrap: wrap; gap: 2px 12px; }
   .board.has-verdict .board-foot { padding-right: 80px; }
   .board-foot { min-height: 84px; }
+  .band-head { flex-direction: column; align-items: stretch; }
   .seg { width: 100%; }
   .seg-btn { flex: 1; align-items: center; padding: 9px 8px; }
 }

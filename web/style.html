@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>样式表 — 随行交付台</title>
+<meta name="description" content="web/assets/styles.css 的活样式表：颜色、字体、组件与状态。">
+<meta name="theme-color" content="#E8E9E2">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23A82C1B'/%3E%3Crect x='4' y='4' width='24' height='24' fill='none' stroke='%23F4F4EE' stroke-width='1.5'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/fonts/archivo.css">
+<link rel="stylesheet" href="assets/fonts/plex.css">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  /* 只属于这一页的排版容器，不改动 tokens */
+  .spec-block { margin-top: 28px; }
+  .spec-block:first-of-type { margin-top: 34px; }
+
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .swatch {
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--sheet);
+  }
+  .swatch-chip { height: 72px; border-bottom: 1px solid var(--rule); }
+  .swatch-meta {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    padding: 10px 12px 4px;
+  }
+  .swatch-name { font-size: 13px; font-weight: 600; }
+  .swatch-hex { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .swatch-use { padding: 0 12px 11px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+
+  .type-row {
+    display: grid;
+    grid-template-columns: 196px minmax(0, 1fr);
+    gap: 20px;
+    padding: 16px 0;
+    border-top: 1px solid var(--rule);
+    align-items: baseline;
+  }
+  .type-row:last-child { border-bottom: 1px solid var(--rule); }
+  .type-road {
+    font-family: var(--mono); font-size: 11.5px; line-height: 1.7;
+    color: var(--muted);
+  }
+  .type-road b { display: block; color: var(--ink); font-weight: 500; }
+  .type-sample { min-width: 0; }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .demo {
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: var(--sheet);
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .demo-wide { grid-column: 1 / -1; }
+  .demo-cap {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .02em;
+    color: var(--muted); margin-top: auto;
+  }
+  .demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+  /* 用类名定格 hover / focus，方便在静态页里看状态 */
+  .is-hover { transform: translateY(-1px); box-shadow: 4px 4px 0 rgba(21, 23, 15, .22); }
+  .btn-ghost.is-hover { background: var(--ink); color: var(--paper); }
+  .is-focus { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+  .lamp--idle { background: var(--rule); }
+  .lamp--running { background: var(--hazard); }
+  .lamp--pass { background: var(--pass); box-shadow: 0 0 0 3px rgba(42, 90, 67, .16); }
+  .lamp--fail { background: var(--seal); box-shadow: 0 0 0 3px rgba(168, 44, 27, .14); }
+
+  .mini-board { position: relative; max-width: 380px; }
+  .mini-board .board-foot { min-height: 96px; padding-right: 96px; }
+
+  .donts { display: grid; gap: 10px; counter-reset: d; }
+  .donts li {
+    display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px;
+    font-size: 14px; line-height: 1.7; color: var(--ink-2);
+  }
+  .donts li::before {
+    counter-increment: d; content: counter(d, decimal-leading-zero);
+    font-family: var(--mono); font-size: 11.5px; color: var(--seal);
+    padding-top: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .demo-grid { grid-template-columns: minmax(0, 1fr); }
+    .type-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  }
+  @media (max-width: 560px) {
+    .swatches { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="index.html">
+      <span class="brand-seal" aria-hidden="true">验</span>
+      <span class="brand-name">随行交付台</span>
+      <span class="brand-meta">styles.css</span>
+    </a>
+    <nav class="nav" aria-label="页面">
+      <a href="index.html">返回外壳</a>
+    </nav>
+    <p class="status"><span class="status-dot" aria-hidden="true"></span>单文件 · 无构建</p>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" style="padding-block: clamp(36px, 4.6vw, 60px)">
+    <div class="wrap">
+      <p class="clause"><span>00</span>样式表</p>
+      <h1 class="hero-title" style="font-size: clamp(2rem, 4.4vw, 3.2rem)">一张纸，两种字体，三种颜色。</h1>
+      <p class="hero-lead" style="margin-top: 16px">这一页直接吃 <span class="mono">web/assets/styles.css</span>，没有第二份样式。改 tokens 就刷新这里看效果——它同时也是答辩附录里的设计规范。</p>
+    </div>
+  </section>
+
+  <div class="tape" aria-hidden="true"></div>
+
+  <section class="band" id="color">
+    <div class="wrap band-grid">
+      <p class="clause"><span>01</span>颜色</p>
+      <div class="band-body">
+        <h2>九个 token，各有各的活</h2>
+        <p class="lead">黄只做块面（胶带、竖条、进行中），朱砂只给"驳回 / 印章"，绿只给"通过"。三类颜色不复用于装饰，跨页面也不换含义。</p>
+
+        <div class="spec-block swatches">
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--paper)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--paper</span><span class="swatch-hex">#E8E9E2</span></div>
+            <p class="swatch-use">台面纸色，冷灰绿</p>
+          </div>
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--sheet)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--sheet</span><span class="swatch-hex">#F4F4EE</span></div>
+            <p class="swatch-use">抬起的面板：判定板、卡片</p>
+          </div>
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--ink)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--ink</span><span class="swatch-hex">#15170F</span></div>
+            <p class="swatch-use">正文、硬边框、反色页脚</p>
+          </div>
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--ink-2)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--ink-2</span><span class="swatch-hex">#3A3E33</span></div>
+            <p class="swatch-use">次级正文</p>
+          </div>
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--muted)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--muted</span><span class="swatch-hex">#6C7064</span></div>
+            <p class="swatch-use">字段名、注释（与纸面 ≈ 4.6:1）</p>
+          </div>
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--rule)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--rule</span><span class="swatch-hex">#C8CABE</span></div>
+            <p class="swatch-use">分隔线、空闲态灯</p>
+          </div>
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--hazard)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--hazard</span><span class="swatch-hex">#E0B418</span></div>
+            <p class="swatch-use">安全黄：警示胶带、进行中、要点竖条</p>
+          </div>
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--seal)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--seal</span><span class="swatch-hex">#A82C1B</span></div>
+            <p class="swatch-use">朱砂：驳回、印章</p>
+          </div>
+          <div class="swatch">
+            <div class="swatch-chip" style="background: var(--pass)"></div>
+            <div class="swatch-meta"><span class="swatch-name">--pass</span><span class="swatch-hex">#2A5A43</span></div>
+            <p class="swatch-use">通过</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="type">
+    <div class="wrap band-grid">
+      <p class="clause"><span>02</span>字体</p>
+      <div class="band-body">
+        <h2>中文不硬造，靠字号和字重分层级</h2>
+        <p class="lead">拉丁与数字用自托管的 Archivo，机器值用 IBM Plex Mono，中文回落系统黑体栈。所以离线、断网、换台电脑，字形都一样。</p>
+
+        <div class="spec-block">
+          <div class="type-row">
+            <div class="type-road"><b>display</b>Archivo + 系统黑体<br>700 · clamp(2.5rem, 6vw, 4.6rem) · lh 1.06</div>
+            <div class="type-sample hero-title" style="font-size: clamp(2rem, 4.2vw, 3rem)">模型可以争论，闸门说了算。</div>
+          </div>
+          <div class="type-row">
+            <div class="type-road"><b>h2</b>系统黑体<br>700 · 1.5–1.95rem · lh 1.3</div>
+            <div class="type-sample" style="font-size: 1.6rem; font-weight: 700; line-height: 1.3; letter-spacing: -.01em">座位固定，人数可变</div>
+          </div>
+          <div class="type-row">
+            <div class="type-road"><b>body</b>系统黑体<br>400 · 16px · lh 1.75</div>
+            <div class="type-sample">契约是能跑起来的验收标准。模型交出整文件补丁，四类闸门逐项判定——全绿才算交付，模型的自述不算数。</div>
+          </div>
+          <div class="type-row">
+            <div class="type-road"><b>mono</b>IBM Plex Mono<br>400–500 · 11.5–12.5px · tabular</div>
+            <div class="type-sample mono">fix-parser-inline-comment · 5 passed · +18 −0 · exit 0</div>
+          </div>
+          <div class="type-row">
+            <div class="type-road"><b>label</b>系统黑体<br>400 · 11.5–12px · 字距 .04em</div>
+            <div class="type-sample" style="font-size: 12px; letter-spacing: .04em; color: var(--muted)">字段名　注释　小标签</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="parts">
+    <div class="wrap band-grid">
+      <p class="clause"><span>03</span>组件</p>
+      <div class="band-body">
+        <h2>每个可点的东西，都有 hover 和 focus</h2>
+        <p class="lead">圆角只有 2–3px，阴影只有无模糊硬投影。下面的 hover / focus 是用类名定格的，方便静态查看。</p>
+
+        <div class="spec-block demo-grid">
+          <div class="demo demo-wide">
+            <div class="demo-row">
+              <button class="btn btn-ink" type="button">跑一次闸门</button>
+              <button class="btn btn-ink is-hover" type="button">hover</button>
+              <button class="btn btn-ink is-focus" type="button">focus</button>
+              <button class="btn btn-ink" type="button" disabled>判定中…</button>
+              <a class="btn btn-ghost" href="#parts">读契约原文</a>
+              <button class="btn btn-ghost is-hover" type="button">hover</button>
+            </div>
+            <div class="demo-row">
+              <div class="seg" role="tablist" aria-label="示例排班">
+                <button class="seg-btn is-on" type="button" role="tab" aria-selected="true">2p.single<em>两人</em></button>
+                <button class="seg-btn" type="button" role="tab" aria-selected="false">3p.single<em>三人</em></button>
+                <button class="seg-btn" type="button" role="tab" aria-selected="false">3p.dual<em>双提案</em></button>
+              </div>
+            </div>
+            <p class="demo-cap">.btn / .btn-ink / .btn-ghost / .seg / .seg-btn — 高度 44px，hover 上移 1px + 硬投影</p>
+          </div>
+
+          <div class="demo">
+            <div class="demo-row" style="gap: 18px">
+              <span class="lamp lamp--idle"></span>
+              <span class="lamp lamp--running"></span>
+              <span class="lamp lamp--pass"></span>
+              <span class="lamp lamp--fail"></span>
+            </div>
+            <p class="demo-cap">.lamp — 空闲 / 进行中 / 通过 / 驳回，8px</p>
+          </div>
+
+          <div class="demo">
+            <div class="demo-row" style="gap: 6px">
+              <span class="chip">deepseek-chat</span>
+              <span class="chip">kimi-k3-1-pro<span class="chip-tag">兼</span></span>
+              <span class="chip chip-empty">空席</span>
+            </div>
+            <p class="demo-cap">.chip — 11.5px mono，2px 圆角；.chip-empty 虚线</p>
+          </div>
+
+          <div class="demo">
+            <div class="mini-board board">
+              <div class="board-foot">
+                <div class="board-count-wrap">
+                  <p class="board-count"><b>0</b> 项未通过</p>
+                  <p class="board-sub">4 项全绿 · 交付成立</p>
+                </div>
+                <button class="seal is-on" type="button" aria-label="印章示例">可交付</button>
+              </div>
+            </div>
+            <p class="demo-cap">.seal — 86px，双线边框，rotate(-7deg)，mix-blend-mode: multiply</p>
+          </div>
+
+          <div class="demo">
+            <article class="gate" style="border-color: var(--ink)">
+              <div class="gate-head"><span class="gate-code">tests</span><span class="gate-tag">功能</span></div>
+              <h3>验收命令全绿</h3>
+              <dl>
+                <div><dt>判什么</dt><dd>验收命令全部退出码 0</dd></div>
+                <div><dt>本轮</dt><dd class="mono">pytest -q → 5 passed</dd></div>
+              </dl>
+            </article>
+            <p class="demo-cap">.gate — 1px 墨线，无阴影，标题 17px</p>
+          </div>
+
+          <div class="demo demo-wide">
+            <div class="demo-row" style="gap: 8px; align-items: stretch">
+              <article class="seat" style="flex: 1; min-height: 0">
+                <h3>提案</h3>
+                <p class="seat-job">产出整文件补丁</p>
+                <ul class="chips"><li class="chip">deepseek-chat</li></ul>
+              </article>
+              <article class="seat seat-gate" style="flex: 1; min-height: 0">
+                <h3>闸门</h3>
+                <p class="seat-job">四类闸门终裁</p>
+                <ul class="chips"><li class="chip">4 类 · 终裁</li></ul>
+              </article>
+            </div>
+            <p class="demo-cap">.seat / .seat-gate — 座位卡，闸门用反色块</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="rules">
+    <div class="wrap band-grid">
+      <p class="clause"><span>04</span>规则</p>
+      <div class="band-body">
+        <h2>不做的事，写在规范里</h2>
+        <p class="lead">动效只有两档：L1 精致静态（hover、折叠、切换，160–220ms），加一处 L2——首屏判定板逐项判定后盖章。所有动效在 <span class="mono">prefers-reduced-motion</span> 下直接出结果。</p>
+
+        <ol class="spec-block donts">
+          <li>不用近黑底 + 荧光绿 / 荧光橙</li>
+          <li>不用米黄 + 高对比衬线 + 陶土色的组合</li>
+          <li>不把内容切成等大圆角卡片网格，不用同一层软阴影</li>
+          <li>不在标题里给单个词换色、换斜体</li>
+          <li>不给每张卡加 fade-and-slide-up 入场</li>
+          <li>不用 emoji 当图标，不在按钮后面缀箭头</li>
+          <li>黄、红、绿三色不复用于装饰</li>
+        </ol>
+
+        <p class="iron" style="margin-top: 22px">完整规范在 <a href="DESIGN.md" style="border-bottom: 1px solid var(--rule)">web/DESIGN.md</a>：色板、字体、版式、动效档位、性能红线和全部 Don'ts。</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div class="foot-left">
+      <p class="foot-line">样式是判定的一部分。</p>
+      <p class="foot-copy">页面用同一套 token 渲染四类闸门与交付记录。判定逻辑在 Python 里，视觉只负责让"过没过"一眼看清。</p>
+    </div>
+    <div class="foot-right">
+      <nav class="foot-links" aria-label="文档">
+        <a href="index.html">返回外壳</a>
+        <a href="DESIGN.md">设计规范</a>
+        <a href="../README.md">README</a>
+      </nav>
+      <p class="foot-meta">delivery-bench v0.2 · web/assets/styles.css</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
