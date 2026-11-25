@@ -278,6 +278,11 @@ class ProtocolRunner:
             if blockers:
                 lines.append("复核提出的阻断问题：")
                 lines.extend(f"- [{b.gate}] {b.claim}" for b in blockers)
+            others = [item for item in outcome.items if item.severity != "BLOCKER"][:3]
+            if others:
+                # 非阻断结论也要让提案方看到，否则复核等于白做
+                lines.append("复核提及其他问题（未构成阻断）：")
+                lines.extend(f"- [{item.gate}] {item.claim}（证据：{item.evidence[:80]}）" for item in others)
             self._feedback = lines
 
         self._finish(Outcome.ESCALATED, f"{self.max_attempts} 轮内未能全绿，交人工处理")

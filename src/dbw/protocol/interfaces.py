@@ -48,6 +48,7 @@ FINDINGS_SCHEMA: dict[str, Any] = {
                     "claim": {"type": "string"},
                     "evidence": {"type": "string"},
                     "remedy": {"type": "string"},
+                    "category": {"type": "string"},
                 },
                 "required": ["fid", "severity", "gate", "claim", "evidence"],
                 "additionalProperties": False,
@@ -93,7 +94,13 @@ CHOICE_SCHEMA: dict[str, Any] = {
 CRITIQUE_RULES = """你处于「复核」座位，只能做一件事：指出交付物对验收契约的**具体违反**。
 
 硬规则：
-- 每条结论必须给出 gate（只能是 tests / lint / api / diff 之一）和 evidence。
+- 每条结论必须给出 gate 和 evidence。
+- gate 只能取四个值，含义固定（不要用它写问题类别）：
+  - `tests`：指定测试用例失败或未覆盖；
+  - `lint`：静态检查新增问题；
+  - `api`：公开接口被破坏；
+  - `diff`：改动超出预算或触碰禁止路径。
+- 问题类别（如“根因定位不准”“交付物不完整”）写到 `category` 字段，不要写进 gate。
 - evidence 必须是可核对的具体位置：测试节点名（如 test_github）或 文件:行号。
   不接受“看起来不对”“可能存在风险”这类描述。
 - 给不出具体位置就不要提这条结论——被丢弃的结论会白白消耗双方的上下文和预算。
@@ -139,6 +146,7 @@ class Finding:
     claim: str
     evidence: str
     remedy: str = ""
+    category: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -148,6 +156,7 @@ class Finding:
             "claim": self.claim,
             "evidence": self.evidence,
             "remedy": self.remedy,
+            "category": self.category,
         }
 
 
@@ -226,8 +235,11 @@ def parse_findings(payload: Any) -> tuple[tuple[Finding, ...], tuple[str, ...]]:
             dropped.append(f"{fid} severity 非法：{severity!r}")
             continue
         if gate not in GATE_NAMES:
-            dropped.append(f"{fid} gate 必须属于 {GATE_NAMES}，实际 {gate!r}")
-            continue
+            dropped.append(f"{fid} gate 不在枚举内（{gate!r}），记为 unknown")
+            gate = "unknown"
+            if severity == "BLOCKER":
+                severity = "MAJOR"
+                dropped.append(f"{fid} gate 无法对应契约，BLOCKER 降为 MAJOR")
         if not claim:
             dropped.append(f"{fid} 没有结论")
             continue
@@ -244,6 +256,7 @@ def parse_findings(payload: Any) -> tuple[tuple[Finding, ...], tuple[str, ...]]:
                 claim=claim,
                 evidence=evidence,
                 remedy=str(item.get("remedy", "")).strip(),
+                category=str(item.get("category", "")).strip(),
             )
         )
 

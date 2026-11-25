@@ -242,9 +242,44 @@ def test_review_interface_drops_findings_without_evidence():
             ]
         }
     )
-    assert [f.fid for f in findings] == ["F1"]
+    assert [f.fid for f in findings] == ["F1", "F3"]
+    assert findings[1].gate == "unknown", "未知 gate 保留结论，降为 unknown"
     assert any("没有证据" in d for d in dropped)
     assert any("gate" in d for d in dropped)
+
+
+def test_blocker_with_unknown_gate_is_downgraded():
+    """未挂到契约上的结论不能阻断交付，但仍保留信息。"""
+    findings, dropped = parse_findings(
+        {
+            "findings": [
+                {"fid": "F1", "severity": "BLOCKER", "gate": "root_cause", "claim": "根因不对", "evidence": "a.py:12"}
+            ]
+        }
+    )
+    assert [f.fid for f in findings] == ["F1"]
+    assert findings[0].severity == "MAJOR"
+    assert findings[0].gate == "unknown"
+    assert any("BLOCKER" in d for d in dropped)
+
+
+def test_finding_keeps_category_field():
+    findings, _ = parse_findings(
+        {
+            "findings": [
+                {
+                    "fid": "F1",
+                    "severity": "MAJOR",
+                    "gate": "tests",
+                    "claim": "覆盖不足",
+                    "evidence": "test/test_output.py::test_github",
+                    "category": "测试覆盖",
+                }
+            ]
+        }
+    )
+    assert findings[0].category == "测试覆盖"
+    assert findings[0].to_dict()["category"] == "测试覆盖"
 
 
 def test_review_workload_verifies_its_own_findings():
