@@ -1,0 +1,29 @@
+本目录部分代码改编自 mini-swe-agent
+=====================================
+
+来源项目：https://github.com/SWE-agent/mini-swe-agent
+基线提交：04d809c（2026-09-03）
+许可证：MIT License
+版权：Copyright (c) 2025 Kilian A. Lieret and Carlos E. Jimenez
+
+MIT 许可证全文见随附的 LICENSE.mini-swe-agent 文件。
+
+改动范围（本项目的改编，非原样复制）
+------------------------------------
+- 移除 jinja2 模板引擎，改用 f-string 模板；
+- 移除 pydantic 配置类，改用 dataclass 与显式参数；
+- 移除 litellm 模型层，改为注入本项目的 `ModelAdapter`，
+  从而复用其能力协商、降级登记与 token 记账；
+- 预算改为本项目的 `Budget`，超支作为正常终止出口；
+- 动作解析由"模型消息中的 actions 字段"改为"解析 bash 围栏代码块"；
+- 新增工作区快照与差异提取（`workspace.py`），产物归一化为 `Patch`；
+- 新增契约摘要渲染（`render_contract_digest`）。
+
+对应关系
+--------
+| 本目录            | 原项目                                   |
+|-------------------|------------------------------------------|
+| `local_env.py`    | `environments/local.py`                  |
+| `loop.py`         | `agents/default.py`                      |
+| `miniswe.py`      | 无（本项目新增的包装层）                  |
+| `workspace.py`    | 无（本项目新增）                          |
