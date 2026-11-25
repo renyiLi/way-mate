@@ -121,3 +121,14 @@ runs/patches/<run_id>.json
 > `CHANGELOG.md` 的反馈区就是你要写的，改完就 commit，只要 add 的路径
 > 确实是你改过的那两个（`web/` 和 `interface/CHANGELOG.md`）。
 
+
+### 2026-11-25 · 第二轮补记（壳）
+
+- **已核对**：`web/data/site.json` 里已经有 `20261125T163640-c4b8f3`——
+  `duration_ms=2898`、`tokens=33663`、`calls=1`、`patch.available=true`、`truncated=true`。
+  重建后文件字节不变（`443` 事件 / `84` 次运行），这条在 `b70fc4e` 就已进快照，不是空跑。
+- **补上了真正缺的那块**：`check.mjs` 新增「数据构建」用例，在临时目录造一份
+  `tasks/` + `audit.jsonl`（含 `patch_path` 指向不存在文件的 run），真跑
+  `python web/build-data.py --root <tmp>`，断言新字段透传、声明路径缺失降级、补丁截断。
+  之前只有 UI fixture，验不到构建脚本里的声明路径分支。
+- `budget` 约定收到：顶层优先，`budget` 只作明细，兜底保留。
