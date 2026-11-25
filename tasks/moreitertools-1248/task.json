@@ -1,0 +1,22 @@
+{
+  "id": "moreitertools-1248",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "30ada7dd597316a3ef967911477e0a1d9f55eefe",
+  "pull_request": 1248,
+  "title": "numeric_range 的包含判断与长度与其迭代结果不一致",
+  "statement": "more_itertools.numeric_range 在步长无法精确表示时（例如浮点步长 0.1），两个方法的结论和它实际迭代出来的元素对不上：\n1. `x in rng` 会把并不在序列里的值判为存在；\n2. `len(rng)` 算出来和实际能迭代出的元素个数不同。\n期望：__contains__ 与 __len__ 的判定必须与迭代结果完全一致。",
+  "target_test": [
+    "tests/test_more.py::NumericRangeTests::test_contains_items_with_inexact_step",
+    "tests/test_more.py::NumericRangeTests::test_len_matches_iteration"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": ["more_itertools/more.py"],
+  "forbidden": ["tests/"],
+  "tier": "hard",
+  "solution_note": "上游改了 4 处（__contains__、__len__、__getitem__ 与内部长度缓存），共 38 增 / 18 删；statement 只描述两个方法的结果与迭代不一致。",
+  "verified": {
+    "red_without_fix": "2 failed, 592 passed, 11179 subtests passed",
+    "green_with_fix": "594 passed, 11179 subtests passed",
+    "fix_size": "38 行新增 / 18 行删除，涉及 4 处"
+  }
+}
