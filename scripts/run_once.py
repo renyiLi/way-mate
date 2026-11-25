@@ -28,6 +28,7 @@ def main() -> int:
     parser.add_argument("--no-prepare", action="store_true", help="工作区已就绪，不要再复制")
     parser.add_argument("--task", default="", help="任务目录（tasks/xxx），自动读配方")
     parser.add_argument("--strip-exact", action="store_true", help="摘掉契约里的 exact 段（对照组）")
+    parser.add_argument("--timeout", type=float, default=180.0, help="单次模型调用超时（秒）")
     args = parser.parse_args()
 
     profile = PROFILES[args.provider]
@@ -70,6 +71,7 @@ def main() -> int:
         target_file=(recipe.get("target_files") or [""])[0],
         strip_exact=args.strip_exact,
         prepare=prepare,
+        timeout_s=args.timeout,
     )
 
     if result.error:
