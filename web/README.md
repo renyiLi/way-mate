@@ -45,7 +45,7 @@ CHROME_PATH=/path/to/chrome node web/check.mjs
 
 覆盖：概览数字、任务详情与时间轴、运行列表筛选与搜索、键盘（`/`、`↑↓`、`End`）、
 运行详情闸门与时间线、运行对比、CSV 导出、补丁可读、**数据构建（新字段 + 降级补丁）**、
-缺失补丁文件不崩、打印媒体、未捕获异常。
+**预算余量**、**预算超限转朱砂**、缺失补丁文件不崩、打印媒体、未捕获异常。
 
 「数据构建」这条不是跑浏览器：它在临时目录里造一份最小 `tasks/` + `audit.jsonl`（含
 `duration_ms`、`tokens`、`calls`，以及一条 `patch_path` 指向不存在文件的 run），
@@ -65,7 +65,7 @@ fixture 是把真实 `site.json` 改一处再注入 `index.html`（替换 `data/
 | `#/tasks` | 任务列表 | `tasks[]` |
 | `#/tasks/<id>` | 任务详情：契约字段、契约原文、运行时间轴 + 运行表、按模型汇总 | `tasks[]` + `runs[]` 按 `task_id` 过滤 |
 | `#/runs` | 运行列表：按结果筛选（全部 / 交付成立 / 驳回 / 未记录） | `runs[]` |
-| `#/runs/<id>` | 运行详情：元信息、闸门逐项判定、补丁（有则显示）、事件时间线 | `runs[].gate`、`runs[].patch`、`runs[].timeline` |
+| `#/runs/<id>` | 运行详情：元信息、闸门逐项判定、预算余量、补丁（有则显示）、事件时间线 | `runs[].gate`、`runs[].budget`、`runs[].patch`、`runs[].timeline` |
 | `#/runs/compare?a=<id>&b=<id>` | 两次运行对比：元信息与四类闸门逐行对照 | `runs[]` 里的两条 |
 
 路由不存在时回到概览；`task` / `run` 找不到时给"找不到 + 回列表"的提示，不白屏。
@@ -95,6 +95,15 @@ outcome, tokens, calls, duration_ms, all_green, tests, lint, api, diff
 闸门列取值 `pass` / `fail` / 空（没有判定）。文件带 UTF-8 BOM + CRLF，Excel 直接打开不乱码。
 导出在浏览器里生成，不经过任何服务端。
 
+## 预算余量
+
+`run_end.budget` 里的上限画成三条细条：**调用 / token / 耗时**。
+
+- 达到 80% 转安全黄，超过 100% 转朱砂
+- 只渲染「有已用量、也有上限」的项；一条都凑不齐就不显示这一节
+- 已用量优先取 `budget.*`，缺了用 run 顶层的 `calls` / `tokens` 兜底
+- `budget` 是明细，顶层字段才是权威值（后端约定，见 CHANGELOG）
+
 ## 补丁
 
 `run_end.patch_path` 指向 `runs/patches/<run_id>.json`，构建时读进来：
@@ -104,6 +113,8 @@ outcome, tokens, calls, duration_ms, all_green, tests, lint, api, diff
 ```
 
 - 单文件最多 30k 字符、合计 60k，超出截断并标 `truncated`
+- **正文只随快照导出最近 3 份**（合计 240 KB 上限），更早的只留路径与字数（`content_omitted`），
+  否则一份 170k 的补丁就能把 `site.json` 撑到 1 MB
 - 文件不存在时 `patch.available = false`，页面显示路径与原因，不当成错误
 - 旧 run 既没有 `patch_path` 也没有对应文件时 `patch = null`，页面不出现「补丁」一节
 

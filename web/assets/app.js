@@ -861,6 +861,12 @@
     }
     const files = (patch.files || [])
       .map((file) => {
+        if (typeof file.content !== "string") {
+          return (
+            '<p class="patch-file-static"><span class="mono">' + esc(file.path) + "</span>" +
+            '<span class="patch-size">' + fmtNum(file.chars) + " 字符 · 未导出正文</span></p>"
+          );
+        }
         const autoOpen = (patch.files || []).length === 1 && file.chars <= 6000;
         return (
           '<details class="patch-file"' + (autoOpen ? " open" : "") +
@@ -870,12 +876,44 @@
         );
       })
       .join("");
+    const note = patch.content_omitted
+      ? '<p class="runs-note">补丁正文只随快照导出最近 3 份，更早的只保留路径与字数；需要时直接打开文件。</p>'
+      : patch.truncated
+        ? '<p class="runs-note">内容较长，已截断显示（单文件 30k / 合计 60k 字符上限）。</p>'
+        : "";
     return (
       '<h3 class="sub-title">补丁 <span class="count">' + (patch.files || []).length + " 个文件</span></h3>" +
       (patch.rationale ? '<p class="patch-rationale">' + esc(patch.rationale) + "</p>" : "") +
       '<div class="patch-files">' + files + "</div>" +
-      (patch.truncated ? '<p class="runs-note">内容较长，已截断显示（单文件 30k / 合计 60k 字符上限）。</p>' : "")
+      note
     );
+  }
+
+  function budgetSection(run) {
+    const budget = run.budget || {};
+    const rows = [];
+
+    const push = (label, used, max, format) => {
+      if (typeof used !== "number" || typeof max !== "number" || max <= 0) return;
+      const ratio = used / max;
+      const percent = Math.min(100, Math.max(0, Math.round(ratio * 100)));
+      const over = ratio > 1;
+      const warn = !over && ratio >= 0.8;
+      rows.push(
+        '<div class="meter' + (over ? " is-over" : warn ? " is-warn" : "") + '">' +
+        '<span class="meter-label">' + label + "</span>" +
+        '<span class="meter-bar" aria-hidden="true"><i style="width:' + percent + '%"></i></span>' +
+        '<span class="meter-value">' + format(used) + " / " + format(max) + "</span>" +
+        "</div>"
+      );
+    };
+
+    push("调用", typeof budget.calls === "number" ? budget.calls : run.calls, budget.max_calls, fmtNum);
+    push("token", typeof budget.tokens === "number" ? budget.tokens : run.tokens, budget.max_tokens, fmtNum);
+    push("耗时", budget.wall_s, budget.max_wall_s, (seconds) => fmtDuration(seconds * 1000));
+
+    if (!rows.length) return "";
+    return '<h3 class="sub-title">预算</h3><div class="budget">' + rows.join("") + "</div>";
   }
 
   function viewRun(id) {
@@ -926,6 +964,7 @@
           (run.gate.all_green ? "all_green · 交付成立" : "未通过 · 交付不成立") +
           "</p>" + gateDetailRows(run.gate)
         : '<p class="empty">这次运行没有闸门报告。</p>') +
+      budgetSection(run) +
       patchSection(run) +
       '<h3 class="sub-title">事件时间线 <span class="count">' + run.timeline.length + "</span></h3>" +
       '<ol class="timeline">' + run.timeline.map(timelineItem).join("") + "</ol>" +

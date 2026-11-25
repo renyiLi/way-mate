@@ -41,6 +41,8 @@ ROOT = Path(__file__).resolve().parent.parent
 PATCH_DIR = "runs/patches"
 PATCH_TOTAL_LIMIT = 60000
 PATCH_FILE_LIMIT = 30000
+PATCH_KEEP_WITH_CONTENT = 3
+PATCH_BUDGET_BYTES = 240000
 
 
 def read_json(path: Path):
@@ -265,6 +267,12 @@ def build_run(events, root: Path):
     )
 
     budget = end.get("budget") if isinstance(end.get("budget"), dict) else {}
+    budget_detail = {}
+    for key in ("calls", "max_calls", "tokens", "max_tokens", "wall_s", "max_wall_s"):
+        value = budget.get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            budget_detail[key] = value
+
     tokens = end.get("tokens")
     if tokens is None:
         tokens = budget.get("tokens")
@@ -307,6 +315,7 @@ def build_run(events, root: Path):
         "rounds": end.get("rounds"),
         "calls": end.get("calls") or runtime.get("calls"),
         "tokens": tokens,
+        "budget": budget_detail or None,
         "gate_attempts": len(gates),
         "gate_signature": gate_event.get("signature"),
         "gate": slim_gate(gate_report) if gate_report else None,
@@ -314,6 +323,28 @@ def build_run(events, root: Path):
         "patch": resolve_patch(root, events[0].get("run_id") or "", end.get("patch_path")),
         "timeline": [slim_event(event) for event in events],
     }
+
+
+def trim_patches(runs):
+    """补丁正文只保留最近几份：整站大小控制在几百 KB，老 run 只留元信息。
+
+    runs 已按时间倒序，所以"最近的"就是列表前面那几份。
+    """
+    kept, used = 0, 0
+    for run in runs:
+        patch = run.get("patch")
+        if not patch or not patch.get("available"):
+            continue
+        files = patch.get("files") or []
+        size = sum(len((file.get("content") or "").encode("utf-8")) for file in files)
+        if kept < PATCH_KEEP_WITH_CONTENT and used + size <= PATCH_BUDGET_BYTES:
+            kept += 1
+            used += size
+            continue
+        for file in files:
+            file.pop("content", None)
+        patch["content_omitted"] = True
+    return runs
 
 
 def build_runs(events, root: Path):
@@ -325,7 +356,7 @@ def build_runs(events, root: Path):
         grouped.setdefault(run_id, []).append(event)
     runs = [build_run(group, root) for group in grouped.values()]
     runs.sort(key=lambda r: (r["started_at"] or "", r["run_id"]), reverse=True)
-    return runs
+    return trim_patches(runs)
 
 
 def gate_stats(runs):

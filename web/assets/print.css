@@ -71,7 +71,7 @@ tr, .gate-line, .timeline li, .task, .board { break-inside: avoid; }
 .board, .gate, .task { box-shadow: none !important; }
 
 /* 颜色要打印出来，不然灯和色条会变成空白 */
-.lamp, .sig i, .seal, .chip-tier, .gate-verdict {
+.lamp, .sig i, .seal, .chip-tier, .gate-verdict, .meter-bar i, .fail-gate, .diff-flag {
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }

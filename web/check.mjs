@@ -99,6 +99,12 @@ async function buildFixture(name) {
     const run = data.runs.find((item) => item.gate) || data.runs[0];
     run.patch = { path: "runs/patches/" + run.run_id + ".json", available: false, reason: "missing" };
     data.__fixture = { case: name, run_id: run.run_id };
+  } else if (name === "over-budget") {
+    const run = data.runs.find((item) => item.gate) || data.runs[0];
+    run.budget = { calls: 50, max_calls: 40, tokens: 210000, max_tokens: 200000 };
+    run.calls = 50;
+    run.tokens = 210000;
+    data.__fixture = { case: name, run_id: run.run_id };
   } else if (name === "with-patch") {
     const run = data.runs.find((item) => item.gate) || data.runs[0];
     run.patch = {
@@ -408,6 +414,36 @@ async function main() {
 
         const bad = Object.keys(checks).filter((key) => !checks[key]);
         return bad.length ? [false, "失败项: " + bad.join(", ")] : [true, Object.keys(checks).length + " 项断言"];
+      }],
+
+      ["预算余量（真实数据）", async () => {
+        const runId = await evaluate(`(() => {
+          const item = window.__DBW_DATA__.runs.find((run) => run.budget && typeof run.budget.max_tokens === 'number');
+          return item ? item.run_id : null;
+        })()`);
+        if (!runId) return [true, "快照里没有带上限的运行，跳过"];
+        await navigate(`${base}#/runs/${runId}`);
+        const value = await evaluate(`(() => ({
+          meters: document.querySelectorAll('.meter').length,
+          over: document.querySelectorAll('.meter.is-over').length,
+          section: !!document.querySelector('.budget')
+        }))()`);
+        return value.meters > 0 && value.section
+          ? [true, `meters=${value.meters} over=${value.over}`]
+          : [false, JSON.stringify(value)];
+      }],
+
+      ["预算超限转朱砂", async () => {
+        await navigate(base + "__fixture?case=over-budget");
+        const runId = await evaluate(`(() => window.__DBW_DATA__.__fixture.run_id)()`);
+        await navigate(`${base}__fixture?case=over-budget#/runs/${runId}`);
+        const value = await evaluate(`(() => ({
+          meters: document.querySelectorAll('.meter').length,
+          over: document.querySelectorAll('.meter.is-over').length
+        }))()`);
+        return value.meters === 2 && value.over === 2
+          ? [true, "2 条超限"]
+          : [false, JSON.stringify(value)];
       }],
 
       ["缺失补丁文件不崩", async () => {

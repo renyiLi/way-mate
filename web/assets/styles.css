@@ -822,12 +822,48 @@ table.runs tbody tr.is-hidden { display: none; }
 .patch-file summary::-webkit-details-marker { display: none; }
 .patch-file summary:hover { background: rgba(21, 23, 15, .035); }
 .patch-size { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.patch-file-static {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  margin: 0; padding: 10px 14px;
+  border: 1px solid var(--rule); border-radius: 3px;
+  font-family: var(--mono); font-size: 12px;
+  color: var(--muted);
+}
+.patch-omitted {
+  margin: 0; padding: 12px 14px;
+  border-top: 1px solid var(--rule);
+  font-size: 12px; line-height: 1.7; color: var(--muted);
+}
 .patch-code {
   margin: 0; padding: 12px 14px;
   max-height: 420px; overflow: auto;
   border-top: 1px solid var(--rule);
   font-family: var(--mono); font-size: 12px; line-height: 1.7;
 }
+
+/* ---------- 预算条 -------------------------------------------------------- */
+
+.budget { margin-top: 12px; display: grid; gap: 10px; max-width: 680px; }
+.meter {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 12px; align-items: center;
+}
+.meter-label { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.meter-bar {
+  height: 6px;
+  background: var(--rule);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.meter-bar i { display: block; height: 100%; background: var(--ink); }
+.meter.is-warn .meter-bar i { background: var(--hazard); }
+.meter.is-over .meter-bar i { background: var(--seal); }
+.meter-value {
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
+  text-align: right; white-space: nowrap;
+}
+.meter.is-over .meter-value { color: var(--seal); }
 
 /* ---------- 最近失败 ------------------------------------------------------ */
 
@@ -1112,6 +1148,8 @@ tr.run-row { cursor: pointer; }
     font-family: var(--mono); font-size: 11px; color: var(--muted);
   }
   .fail-list a { display: flex; flex-wrap: wrap; gap: 2px 12px; }
+  .meter { grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; }
+  .meter-value { font-size: 11px; }
   .seg-btn { flex: 1; align-items: center; padding: 9px 8px; }
 }
 
