@@ -158,6 +158,43 @@ def load_capabilities(runs_dir: Path, provider: str, model: str) -> Capabilities
     return Capabilities(**json.loads(path.read_text(encoding="utf-8"))["capabilities"])
 
 
+def focus_file(text: str, path: str, failure: str, *, full_under: int = 600, span: int = 320) -> str:
+    """把大文件收窄成"结构索引 + 报错位置附近的原文"。
+
+    整份 5000 行塞进上下文会被稀释，模型既抄不准片段，也找不到该改哪里。
+    报错堆栈里通常直接给出 文件:行号，用它定位窗口。
+    """
+    lines = text.splitlines()
+    if len(lines) <= full_under:
+        return text
+
+    index = [
+        f"  {number}: {line.rstrip()}"
+        for number, line in enumerate(lines, 1)
+        if line.lstrip().startswith(("def ", "class ", "async def "))
+    ]
+    header = [f"# 完整文件共 {len(lines)} 行；下面给结构索引与报错位置附近的原文。", "# 文件结构索引（行号: 定义）："]
+    header.extend(index[:120])
+
+    # Windows 下 pytest 报的是反斜杠路径（more_itertools\more.py:2347），两种分隔符都要认
+    pattern = re.escape(path).replace(r"/", r"[\\/]")
+    hits = [int(m) for m in re.findall(rf"{pattern}:(\d+)", failure) if m.isdigit()]
+    if not hits:
+        # 堆栈里可能只写文件名
+        basename = Path(path).name
+        hits = [int(m) for m in re.findall(rf"{re.escape(basename)}:(\d+)", failure) if m.isdigit()]
+    hits = [line for line in hits if 1 <= line <= len(lines)]
+    if not hits:
+        # 定位不到就退回全文，宁可长也不要给错
+        return text
+
+    low = max(1, min(hits) - span)
+    high = min(len(lines), max(hits) + span)
+    body = [f"# ---- 第 {low}-{high} 行原文（报错位置附近；这部分可直接逐字复制，行号不在正文里）----"]
+    body.extend(lines[low - 1 : high])
+    return "\n".join(header + body)
+
+
 def build_task(repo: Path, contract: Contract, issue: str, target_file: str) -> dict[str, Any]:
     layout = sorted(
         str(path.relative_to(repo)).replace("\\", "/")
@@ -170,11 +207,12 @@ def build_task(repo: Path, contract: Contract, issue: str, target_file: str) -> 
         "repo_layout": layout,
     }
     target = repo / target_file
+    failure = capture_failure(repo, contract.tests[0].cmd)
     if target_file and target.is_file():
         # 只有确实存在"目标文件"时才给，否则模型会被误导去改一个不存在的路径
         task["target_file"] = target_file
-        task["current_file"] = target.read_text(encoding="utf-8")
-    task["failing_test_output"] = capture_failure(repo, contract.tests[0].cmd)
+        task["current_file"] = focus_file(target.read_text(encoding="utf-8"), target_file, failure)
+    task["failing_test_output"] = failure
     return task
 
 
