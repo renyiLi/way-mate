@@ -16,7 +16,7 @@ from .base import (
     WorkerRuntime,
 )
 from .local_env import SUBMIT_SENTINEL, LocalEnvironment, Observation
-from .loop import ExecutionLoop, LoopResult, extract_command
+from .loop import Action, ExecutionLoop, LoopResult, extract_command, parse_action
 from .miniswe import MiniSweRuntime, render_contract_digest
 from .workspace import diff, snapshot
 
@@ -27,6 +27,7 @@ __all__ = [
     "STOP_SUBMITTED",
     "STOP_WALL_TIME",
     "SUBMIT_SENTINEL",
+    "Action",
     "ExecutionLoop",
     "LocalEnvironment",
     "LoopResult",
@@ -36,6 +37,7 @@ __all__ = [
     "WorkerRuntime",
     "diff",
     "extract_command",
+    "parse_action",
     "render_contract_digest",
     "snapshot",
 ]

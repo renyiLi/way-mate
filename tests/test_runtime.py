@@ -25,6 +25,7 @@ from dbw.runtime import (  # noqa: E402
     LocalEnvironment,
     MiniSweRuntime,
     extract_command,
+    parse_action,
     render_contract_digest,
 )
 from dbw.runtime.workspace import diff, snapshot  # noqa: E402
@@ -136,6 +137,38 @@ def test_patch_captures_created_file(tmp_path: Path):
     assert "changed" in result.patch["a.txt"]
     assert "new" in result.patch["b.txt"]
     assert result.claim_done is True
+
+
+def test_patch_captures_write_action(tmp_path: Path):
+    """write 块是跨平台改文件的方式：Windows 下 heredoc 不可用。"""
+    model = ScriptedModel(
+        [
+            "```write:a.py\ndef f():\n    return 1\n```",
+            SUBMIT,
+        ]
+    )
+    result = MiniSweRuntime(model=model).run(workspace=tmp_path, task="写一个文件", budget=Budget(max_calls=4))
+
+    assert result.patch.get("a.py") == "def f():\n    return 1\n"
+    assert (tmp_path / "a.py").read_text(encoding="utf-8").startswith("def f()")
+
+
+def test_write_outside_workspace_is_refused(tmp_path: Path):
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    model = ScriptedModel(["```write:../escape.txt\nnope\n```", SUBMIT])
+    result = MiniSweRuntime(model=model).run(workspace=workspace, task="越界写", budget=Budget(max_calls=4))
+
+    assert result.patch == {}
+    assert not (tmp_path / "escape.txt").exists()
+
+
+def test_parse_action_distinguishes_kinds():
+    write = parse_action("```write:pkg/m.py\nx = 1\n```")
+    assert write is not None and write.kind == "write" and write.target == "pkg/m.py"
+    bash = parse_action("```bash\npytest -q\n```")
+    assert bash is not None and bash.kind == "bash" and bash.body == "pytest -q"
+    assert parse_action("就是一段中文说明") is None
 
 
 def test_patch_marks_deleted_file_as_empty(tmp_path: Path):

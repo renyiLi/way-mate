@@ -145,14 +145,18 @@ def build_task(repo: Path, contract: Contract, issue: str, target_file: str) -> 
         for path in repo.rglob("*.py")
         if not any(part in {".git", "__pycache__", ".pytest_cache"} for part in path.parts)
     )
-    return {
+    task: dict[str, Any] = {
         "task_id": contract.task_id,
         "issue": issue,
         "repo_layout": layout,
-        "target_file": target_file,
-        "current_file": (repo / target_file).read_text(encoding="utf-8"),
-        "failing_test_output": capture_failure(repo, contract.tests[0].cmd),
     }
+    target = repo / target_file
+    if target_file and target.is_file():
+        # 只有确实存在"目标文件"时才给，否则模型会被误导去改一个不存在的路径
+        task["target_file"] = target_file
+        task["current_file"] = target.read_text(encoding="utf-8")
+    task["failing_test_output"] = capture_failure(repo, contract.tests[0].cmd)
+    return task
 
 
 def deliver_once(
@@ -168,15 +172,22 @@ def deliver_once(
     issue: str = "parse_kv 未剥离行内注释：'a=1  # note' 被解析成 '1  # note'；缺 '=' 时异常消息不对",
     target_file: str = "pkg/parser.py",
     strip_exact: bool = False,
+    prepare: bool = True,
     temperature: float | None = None,
     timeout_s: float = 180.0,
+    max_tokens: int = 8192,
 ) -> DeliveryResult:
-    """跑一次完整交付。异常不外抛，全部转成 outcome=error 的结果，便于批量实验。"""
+    """跑一次完整交付。异常不外抛，全部转成 outcome=error 的结果，便于批量实验。
+
+    `prepare=False` 表示工作区已经就绪（例如由 `prepare_task.py` 准备好的真实仓库），
+    此时不再从 fixture 复制，直接使用传入目录。
+    """
     contract_path = Path(contract_path)
     fixture = contract_path.parent
     result = DeliveryResult(provider=provider, model=model)
 
-    prepare_workspace(fixture, work_dir)
+    if prepare:
+        prepare_workspace(fixture, work_dir)
     if strip_exact:
         strip_exact_section(work_dir / "contract.yaml")
     contract = load_contract(work_dir / "contract.yaml")
@@ -230,7 +241,7 @@ def deliver_once(
                 ModelRequest(
                     messages=(Message("system", system_prompt), Message("user", user_prompt)),
                     response_schema=schema,
-                    max_tokens=3072,
+                    max_tokens=max_tokens,
                     temperature=request_temperature,
                     timeout_s=timeout_s,
                     idempotency_key=f"{log.run_id}:proposer:propose:{attempt}",
@@ -267,9 +278,13 @@ def deliver_once(
             break
         except Exception as exc:  # noqa: BLE001
             parse_error = exc
+            # 推理模型可能把输出预算全花在思考上，正文为空。
+            # 这必须报出来，否则会被误判成"提案不合法"。
+            empty = not response.text.strip()
+            hint = "（你的上一条回复没有正文，可能是推理过长）" if empty else ""
             user_prompt = (
                 json.dumps(task, ensure_ascii=False, indent=2)
-                + f"\n\n注意：你上一次的输出不合法（{exc}）。请只输出符合要求的 JSON，不要任何其他文字。"
+                + f"\n\n注意：你上一次的输出不合法{hint}（{exc}）。请直接输出符合要求的 JSON，不要任何其他文字。"
             )
 
     if patch is None:

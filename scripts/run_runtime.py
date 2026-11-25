@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from dbw.config import PROFILES, Settings  # noqa: E402
 from dbw.contract import load_contract  # noqa: E402
 from dbw.delivery import (  # noqa: E402
     apply_patch,
+    capture_failure,
     load_capabilities,
     prepare_workspace,
     reset_workspace,
@@ -46,17 +48,33 @@ def main() -> int:
     parser.add_argument("--model", default="deepseek-chat")
     parser.add_argument("--budget", type=int, default=8, help="最多几步")
     parser.add_argument("--strip-exact", action="store_true")
+    parser.add_argument("--task", default="", help="任务目录；用真实仓库时指定")
     args = parser.parse_args()
 
     profile = PROFILES[args.provider]
     settings = Settings()
     capabilities = load_capabilities(ROOT / "runs", profile.name, args.model)
 
-    prepare_workspace(FIXTURE, WORK)
-    if args.strip_exact:
-        strip_exact_section(WORK / "contract.yaml")
-    contract = load_contract(WORK / "contract.yaml")
-    baseline = lint_baseline(contract, WORK)
+    if args.task:
+        task_dir = Path(args.task).resolve()
+        recipe = json.loads((task_dir / "task.json").read_text(encoding="utf-8"))
+        work = ROOT / ".work" / "tasks" / recipe["id"]
+        label = recipe["title"]
+        reset_workspace(work)
+        contract = load_contract(work / "contract.yaml")
+        # 与后端 A 对齐：同样把失败输出交给它，否则它得自己重新发现一遍
+        failure = capture_failure(work, contract.tests[0].cmd)
+        task_text = f"{recipe['statement']}\n\n当前失败输出：\n{failure}"
+    else:
+        prepare_workspace(FIXTURE, WORK)
+        if args.strip_exact:
+            strip_exact_section(WORK / "contract.yaml")
+        work = WORK
+        task_text = TASK
+        label = "示例仓库 fix-parser-inline-comment"
+
+    contract = load_contract(work / "contract.yaml")
+    baseline = lint_baseline(contract, work)
 
     audit = AuditLog(ROOT / "runs" / "audit.jsonl")
     adapter = OpenAICompatAdapter(
@@ -73,12 +91,13 @@ def main() -> int:
     print("═" * 72)
     print("执行后端（后端 B）：模型在仓库里自己迭代")
     print("═" * 72)
+    print(f"  任务   {label}")
     print(f"  模型   {profile.name} / {args.model}")
     print(f"  预算   {args.budget} 步")
-    print(f"  契约   exact {'已摘掉' if args.strip_exact else f'{len(contract.exact)} 条生效'}")
-    print(f"  基线   {git_sha(WORK)}\n")
+    print(f"  工作区 {work}")
+    print(f"  基线   {git_sha(work)}\n")
 
-    result = runtime.run_contract(workspace=WORK, task=TASK, contract=contract, budget=Budget(max_calls=args.budget))
+    result = runtime.run_contract(workspace=work, task=task_text, contract=contract, budget=Budget(max_calls=args.budget))
 
     print("── 轨迹")
     for step in result.transcript:
@@ -110,9 +129,9 @@ def main() -> int:
         audit.close()
         return 1
 
-    reset_workspace(WORK)
-    apply_patch(WORK, Patch(files=dict(result.patch), rationale=f"runtime/{result.stop_reason}"))
-    report = run_all(contract, WORK, baseline, base_ref="HEAD")
+    reset_workspace(work)
+    apply_patch(work, Patch(files=dict(result.patch), rationale=f"runtime/{result.stop_reason}"))
+    report = run_all(contract, work, baseline, base_ref="HEAD")
 
     print("\n" + "─" * 72)
     print("闸门判定")

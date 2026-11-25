@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -23,6 +24,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="单轮真实交付")
     parser.add_argument("--provider", default="deepseek", choices=sorted(PROFILES))
     parser.add_argument("--model", default="")
+    parser.add_argument("--contract", default="", help="契约路径；缺省用 fixtures/repo_a")
+    parser.add_argument("--no-prepare", action="store_true", help="工作区已就绪，不要再复制")
+    parser.add_argument("--task", default="", help="任务目录（tasks/xxx），自动读配方")
     parser.add_argument("--strip-exact", action="store_true", help="摘掉契约里的 exact 段（对照组）")
     args = parser.parse_args()
 
@@ -31,27 +35,49 @@ def main() -> int:
     model = args.model or settings.get(profile.model_env) or profile.default_models[0]
     capabilities = load_capabilities(ROOT / "runs", profile.name, model)
 
+    if args.task:
+        task_dir = Path(args.task).resolve()
+        recipe = json.loads((task_dir / "task.json").read_text(encoding="utf-8"))
+        work_dir = ROOT / ".work" / "tasks" / recipe["id"]
+        contract_path = work_dir / "contract.yaml"
+        issue = recipe["statement"]
+        prepare = False
+        label = recipe["title"]
+    else:
+        work_dir = ROOT / ".work" / "repo_a"
+        contract_path = Path(args.contract).resolve() if args.contract else ROOT / "fixtures" / "repo_a" / "contract.yaml"
+        issue = "parse_kv 未剥离行内注释：'a=1  # note' 被解析成 '1  # note'；缺 '=' 时异常消息不对"
+        prepare = not args.no_prepare
+        label = "示例仓库 fix-parser-inline-comment"
+
     print("═" * 70)
     print("单轮真实交付：模型 → 补丁 → 闸门")
     print("═" * 70)
+    print(f"  任务   {label}")
     print(f"  模型   {profile.name} / {model}")
+    print(f"  工作区 {work_dir}")
     print(f"  exact  {'已摘掉（对照组）' if args.strip_exact else '生效'}")
-    print(f"  能力   json_schema={'✓' if capabilities.supports_json_schema else '✗'}"
-          f"  temperature={capabilities.fixed_temperature or '可调'}")
 
     result = deliver_once(
-        contract_path=ROOT / "fixtures" / "repo_a" / "contract.yaml",
-        work_dir=ROOT / ".work" / "repo_a",
+        contract_path=contract_path,
+        work_dir=work_dir,
         provider=profile.name,
         model=model,
         api_key=settings.require(profile.key_env),
         base_url=settings.get(profile.base_env, profile.default_base) or profile.default_base,
         capabilities=capabilities,
+        issue=issue,
+        target_file="",
         strip_exact=args.strip_exact,
+        prepare=prepare,
     )
 
     if result.error:
         print(f"  调用失败  {result.error}")
+        return 1
+
+    if result.gate is None:
+        print(f"  未进入闸门：{result.reason}")
         return 1
 
     print(f"  调用   {result.latency_ms} ms，token {result.tokens}")
