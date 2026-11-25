@@ -1,0 +1,19 @@
+{
+  "id": "moreitertools-1309",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "1ea82a711c69f590054987b5cb194157f8ce8ac4",
+  "pull_request": 1309,
+  "title": "bucket 把假值 validator 替换成了默认校验器",
+  "statement": "more_itertools.bucket 接受一个 validator 参数用于过滤元素。当传入的 validator 是“假值但可调用”的对象时，它会被替换成默认的“永远通过”校验器，导致本该被过滤掉的元素也能通过。期望是：只要 validator 不是 None，就必须使用传入的那个校验器。",
+  "target_test": ["tests/test_more.py::BucketTests::test_falsey_validator_is_honoured"],
+  "test_patch": "test_patch.diff",
+  "target_files": ["more_itertools/more.py"],
+  "forbidden": ["tests/"],
+  "tier": "hard",
+  "solution_note": "上游把 `validator or (lambda x: True)` 改成 `(lambda x: True) if validator is None else validator`；statement 只描述症状。",
+  "verified": {
+    "red_without_fix": "1 failed, 619 passed, 11318 subtests passed",
+    "green_with_fix": "620 passed, 11318 subtests passed",
+    "fix_size": "1 行改写（新增 4 行注释）"
+  }
+}
