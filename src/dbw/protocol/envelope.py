@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
@@ -104,6 +105,14 @@ class Budget:
 
 def new_id(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:10]}"
+
+
+def new_run_id() -> str:
+    """运行标识统一为“本地时间戳-随机尾巴”，与 AuditLog 一致。
+
+    时间戳部分是**本地时间**（Asia/Shanghai）；事件里的 ts 一律 UTC。
+    """
+    return f"{time.strftime('%Y%m%dT%H%M%S')}-{uuid.uuid4().hex[:6]}"
 
 
 @dataclass(frozen=True)

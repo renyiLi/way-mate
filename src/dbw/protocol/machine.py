@@ -35,7 +35,7 @@ from .envelope import (
     Phase,
     ProtocolId,
     Seat,
-    new_id,
+    new_run_id,
 )
 from .interfaces import (
     ARBITER_RULES,
@@ -196,7 +196,7 @@ class ProtocolRunner:
         self.request_timeout_s = request_timeout_s
         self.max_output_tokens = max_output_tokens
         self.budget = budget or Budget()
-        self.run_id = run_id or new_id("run")
+        self.run_id = run_id or new_run_id()
         self.hash = contract_hash(contract)
         self.max_attempts = (max_repair_rounds if max_repair_rounds is not None else contract.loop.repair_rounds) + 1
         self.no_improvement_limit = max(1, no_improvement_limit)
@@ -210,11 +210,19 @@ class ProtocolRunner:
         )
         self._seq = 0
         self._feedback: list[str] = []
+        self._started_at = time.perf_counter()
 
     # ------------------------------------------------------------ 对外
 
     def run_protocol(self) -> ProtocolRun:
-        self._emit("run_start", task=self.task, seats=self.seats.to_dict(), interface=self.spec.name)
+        self._emit(
+            "run_start",
+            task_id=str(self.task.get("task_id", "")),
+            task=self.task,
+            seats=self.seats.to_dict(),
+            interface=self.spec.name,
+            protocol=self.seats.protocol().value,
+        )
         try:
             self._loop()
         except BudgetExceeded as exc:
@@ -468,6 +476,9 @@ class ProtocolRunner:
             "run_end",
             outcome=outcome.value,
             reason=reason,
+            tokens=self.budget.tokens,
+            calls=self.budget.calls,
+            duration_ms=int((time.perf_counter() - self._started_at) * 1000),
             budget=self.budget.to_dict(),
             rounds=len(self.run.rounds),
         )

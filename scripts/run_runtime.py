@@ -113,6 +113,16 @@ def main() -> int:
     print(f"  改动   {len(result.patch)} 个文件：{', '.join(result.patch) or '（无）'}")
 
     audit.emit(
+        "run_start",
+        task_id=contract.task_id,
+        git_sha=git_sha(work),
+        interface="authoring",
+        protocol="runtime",
+        provider=args.provider,
+        model=args.model,
+        backend="miniswe",
+    )
+    audit.emit(
         "runtime_run",
         backend="miniswe",
         model=args.model,

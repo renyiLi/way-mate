@@ -7,11 +7,13 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
 import shutil
 import stat
 import subprocess
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -33,6 +35,7 @@ class DeliveryResult:
     patch_files: tuple[str, ...] = ()
     rationale: str = ""
     tokens: int = 0
+    calls: int = 0
     latency_ms: int = 0
     degraded: bool = False
     gate: GateReport | None = None
@@ -50,6 +53,7 @@ class DeliveryResult:
             "files": list(self.patch_files),
             "rationale": self.rationale,
             "tokens": self.tokens,
+            "calls": self.calls,
             "latency_ms": self.latency_ms,
             "degraded": self.degraded,
             "run_id": self.run_id,
@@ -58,6 +62,20 @@ class DeliveryResult:
             "gate": self.gate.to_dict() if self.gate else None,
             "extra": self.extra,
         }
+
+
+def _emit_run_end(log: AuditLog, result: DeliveryResult, *, duration_ms: int, **extra: Any) -> None:
+    """统一 run_end 的形状：前端只读这一套字段，不再写多条取值路径。"""
+    log.emit(
+        "run_end",
+        outcome=result.outcome,
+        tokens=result.tokens,
+        calls=result.calls,
+        duration_ms=duration_ms,
+        rounds=1,
+        reason=result.reason,
+        **extra,
+    )
 
 
 def force_rmtree(path: Path) -> None:
@@ -186,13 +204,16 @@ def deliver_once(
     contract_path = Path(contract_path)
     fixture = contract_path.parent
     result = DeliveryResult(provider=provider, model=model)
+    started_at = time.perf_counter()
 
     if prepare:
         prepare_workspace(fixture, work_dir)
     if strip_exact:
         strip_exact_section(work_dir / "contract.yaml")
     contract = load_contract(work_dir / "contract.yaml")
-    result.contract_hash = json.dumps(contract.to_dict(), sort_keys=True)[:16]
+    result.contract_hash = hashlib.sha256(
+        json.dumps(contract.to_dict(), sort_keys=True, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()[:16]
     baseline = lint_baseline(contract, work_dir)
 
     own_audit = audit is None
@@ -250,12 +271,14 @@ def deliver_once(
             )
         except Exception as exc:  # noqa: BLE001 批量实验要如实记录失败
             result.error = f"{type(exc).__name__}: {exc}"
-            log.emit("run_end", outcome="error", reason=result.error)
+            result.outcome = "error"
+            _emit_run_end(log, result, duration_ms=int((time.perf_counter() - started_at) * 1000))
             if own_audit:
                 log.close()
             return result
 
         result.tokens += response.usage.total
+        result.calls += 1
         result.latency_ms += response.latency_ms
         result.degraded = result.degraded or response.degraded
         log.emit(
@@ -290,7 +313,7 @@ def deliver_once(
     if patch is None:
         result.outcome = "rejected"
         result.reason = f"提案不合法：{type(parse_error).__name__}: {parse_error}"
-        log.emit("run_end", outcome="rejected", reason=result.reason)
+        _emit_run_end(log, result, duration_ms=int((time.perf_counter() - started_at) * 1000))
         if own_audit:
             log.close()
         return result
@@ -304,8 +327,30 @@ def deliver_once(
     result.outcome = "accepted" if report.all_green else "rejected"
     result.reason = "闸门全绿" if report.all_green else "；".join(f"{r.name}: {r.detail}" for r in report.failures)
 
-    log.emit("gate_report", attempt=1, report=report.to_dict(), signature=[(r.name, r.ok) for r in report.results])
-    log.emit("run_end", outcome=result.outcome, rounds=1, budget={"tokens": response.usage.total})
+    log.emit(
+        "gate_report",
+        attempt=1,
+        report=report.to_dict(),
+        signature="|".join(f"{r.name}:{int(r.ok)}" for r in report.results),
+    )
+
+    patch_dir = log.path.parent / "patches"
+    patch_dir.mkdir(parents=True, exist_ok=True)
+    patch_file = patch_dir / f"{log.run_id}.json"
+    patch_file.write_bytes(
+        json.dumps(
+            {"run_id": log.run_id, "files": dict(patch.files), "rationale": patch.rationale},
+            ensure_ascii=False,
+            indent=2,
+        ).encode("utf-8")
+    )
+
+    _emit_run_end(
+        log,
+        result,
+        duration_ms=int((time.perf_counter() - started_at) * 1000),
+        patch_path=str(patch_file),
+    )
     if own_audit:
         log.close()
     return result
