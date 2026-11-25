@@ -246,7 +246,8 @@ class ExecutionLoop:
                     Message(
                         "user",
                         f"你已经连续 {self._readonly_streak} 步只读不写。"
-                        "请立即用 write 块修改你认为需要改的文件；如果你已经知道改哪里，现在就改。",
+                        "请立即用 edit 块修改你需要改的地方——只需给出要替换的那几行，不要写整份文件；"
+                        "如果你已经知道改哪里，现在就改。",
                     )
                 )
                 self._readonly_streak = 0
