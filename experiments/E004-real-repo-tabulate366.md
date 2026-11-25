@@ -1,0 +1,77 @@
+# E004 · 真实仓库任务：tabulate #366
+
+**日期**：2026-11-25（Asia/Shanghai）
+**任务**：[`tasks/tabulate-366`](../tasks/tabulate-366/task.json)
+**上游**：astanin/python-tabulate PR #366，基线 `537d7b03`，正确修复为 **1 行**
+
+## 目的
+
+把此前只在手写 fixture 上验证过的流程，放到真实仓库上跑。
+预期是"能跑通即算合格"；实际结果是**连续失败 6 次**，第 7 次才成立。
+
+这次实验的真正产出不是那次成功，而是**失败序列指出了瓶颈在哪**。
+
+## 任务
+
+`github` 表格格式的多行单元格渲染错乱。
+校验：旧源码上 `test_github_multiline` 红（1 failed / 175 passed），加修复后 176 passed。
+
+## 结果（按时间顺序）
+
+| # | 后端 | 模型 | 设置 | 结果 | token |
+|---|---|---|---|---|---|
+| 1 | A 直接 | `deepseek-v4-1-flash` | 3072 / 8192 输出 | **正文为空**，`finish=length` | 3872 / — |
+| 2 | A 直接 | `deepseek-chat` | 整文件重写 | 3001 行改动、`rationale="PLACEHOLDER"`、pytest 退出码 4 | 1572 |
+| 3 | B 循环 | `deepseek-chat` | 12 步 | 只读不写，0 改动 | 19913 |
+| 4 | B 循环 | `deepseek-chat` | + 注入失败输出，16 步 | 仍只读不写 | 57568 |
+| 5 | B 循环 | `deepseek-chat` | + `write:` 动作 + 只读催办，14 步 | 仍只读不写 | 41144 |
+| 6 | A 直接 | `deepseek-chat` | + SEARCH/REPLACE，**不给目标文件** | 片段猜错：`"github": TableFormat(` 不存在 | — |
+| 7 | A 直接 | `deepseek-chat` | + SEARCH/REPLACE，**给目标文件内容** | ✅ 四闸门全绿，1 个文件 / **1 行** | 33529 |
+
+第 7 次闸门明细：
+
+```
+[PASS] tests  全部通过；通过 1
+[PASS] lint   问题总数 4（基线 4，新增 0）
+[PASS] api    契约未冻结接口
+[PASS] diff   改动 1 个文件 / 1 行（上限 3 / 40）
+=> 全绿（可交付）
+```
+
+## 结论
+
+1. **编辑格式是瓶颈，不是循环**。第 2–5 次失败都源于"要交出整份 1000 行文件"：
+   `direct` 直接截断，`runtime` 则不断读文件凑内容、永远凑不齐。
+   换成 SEARCH/REPLACE 后一次通过。
+2. **单轮后端需要目标文件**。第 6 次模型凭空猜结构；给了文件内容后立刻改对。
+   因此"是否告知目标文件"必须作为实验的**受控变量**写进方法章节。
+3. **闸门抓到了管道 bug，不是模型 bug**。见下节。
+
+## 意外发现：6001 行假 diff
+
+第 7 次之前有一跑，模型改对了、测试也过了，但 diff 报 **6001 行**改动。
+
+原因：写入文件时走了 Python 文本模式，`\n` 被翻译成 CRLF，整份文件"全变了"。
+如果没有 diff 闸门，这次会被判为**通过**——而交付物是一个所有行都变过的文件。
+
+同类问题还有两处：
+
+| 现象 | 原因 | 修法 |
+|---|---|---|
+| `git apply` 报 patch does not apply | 补丁文件写入被转 CRLF | 补丁用 `write_bytes` |
+| diff 多算 1 个文件 | `prepared.json` 落在工作区 | 元数据写到任务目录旁 |
+
+统一结论：**凡是写文件，一律 `write_bytes(content.encode("utf-8"))`。**
+
+## 局限
+
+- 单任务、单模型、每格 1 次；
+- 难度属"易"（修复 1 行），不足以代表真实分布；
+- 第 3–5 次的只读不写也可能是模型个体行为，换模型未必复现。
+
+## 复现
+
+```powershell
+python scripts/prepare_task.py --task tasks/tabulate-366
+python scripts/run_once.py --task tasks/tabulate-366 --provider deepseek --model deepseek-chat
+```
