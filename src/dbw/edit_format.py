@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+import difflib
+
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -101,23 +103,34 @@ def apply_edit(content: str, edit: Edit) -> str:
     ]
 
     if not hits:
-        # 定位到具体哪一行不一致——只说“找不到”会误导模型（和排查的人）
+        # 定位到具体哪一行不一致，并把**文件里的原文**一并给出：
+        # 模型自己写片段容易错，但抄错不了。
         first_line = target[0]
         starts = [index for index, line in enumerate(haystack) if line == first_line]
         if not starts:
+            closest = difflib.get_close_matches(first_line, haystack, n=1, cutoff=0.6)
+            if closest:
+                index = haystack.index(closest[0])
+                text, low, high = _excerpt(lines, index)
+                raise EditError(
+                    f"{edit.path}: SEARCH 片段的第 1 行不存在：{first_line!r}。\n"
+                    f"最接近的是第 {index + 1} 行：{closest[0]!r}\n"
+                    f"该处文件原文（第 {low}-{high} 行），请直接复制：\n{text}"
+                )
             raise EditError(
-                f"{edit.path}: SEARCH 片段的第 1 行在文件里不存在：{first_line!r}。"
-                "请从文件里逐字复制要替换的代码。"
+                f"{edit.path}: SEARCH 片段的第 1 行在文件里找不到：{first_line!r}。"
+                "请先用 grep 确认准确的代码文本。"
             )
         start = starts[0]
         for offset, want in enumerate(target):
             position = start + offset
             actual = haystack[position] if position < len(haystack) else None
             if actual != want:
+                text, low, high = _excerpt(lines, position)
                 raise EditError(
                     f"{edit.path}: SEARCH 片段第 {offset + 1} 行与文件不一致："
-                    f"片段写的是 {want!r}，文件第 {position + 1} 行是 {actual!r}。"
-                    "请从文件里逐字复制。"
+                    f"片段写的是 {want!r}，文件第 {position + 1} 行是 {actual!r}。\n"
+                    f"文件里该区域原文（第 {low}-{high} 行），请直接复制：\n{text}"
                 )
         raise EditError(
             f"{edit.path}: 找不到 SEARCH 片段（首行：{first_line!r}）。"
@@ -133,6 +146,13 @@ def apply_edit(content: str, edit: Edit) -> str:
     newline = _newline_of(lines[start])
     block = [f"{line}{newline}" for line in edit.replace.splitlines()] if edit.replace.strip() else []
     return "".join(lines[:start] + block + lines[start + len(target) :])
+
+
+def _excerpt(lines: list[str], index: int, before: int = 3, after: int = 4) -> tuple[str, int, int]:
+    """取某行附近的一段原文（含行号范围），用于把准确文本直接交给模型。"""
+    start = max(0, index - before)
+    end = min(len(lines), index + after + 1)
+    return "".join(lines[start:end]).rstrip("\n"), start + 1, end
 
 
 def apply_edits(content: str, edits: list[Edit]) -> str:

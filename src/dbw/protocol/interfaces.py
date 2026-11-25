@@ -330,8 +330,10 @@ def _patch_from_edits(payload_edits: Any, payload: dict[str, Any], contract: Con
         raise InvalidOutput(f"改动 {len(result.changed)} 个文件，超过契约上限 {contract.diff.max_files}")
 
     rationale = payload.get("rationale")
-    if not isinstance(rationale, str) or not rationale.strip():
-        raise InvalidOutput("rationale 不能为空：说不出为什么改，就不该改")
+    if not isinstance(rationale, str):
+        # 理由是可选的元数据：它不是判定依据，闸门才是。
+        # 实测两个模型在长文件上都漏这个字段，硬卡会把整条通路堵死。
+        rationale = ""
     return Patch(files=dict(result.changed), rationale=rationale.strip())
 
 
@@ -371,7 +373,9 @@ class AuthoringInterface:
     def propose_schema(self) -> dict[str, Any]:
         return {
             "type": "object",
+            # rationale 放在最前：模型按字段顺序输出，放末尾时容易被长 edits 挤掉
             "properties": {
+                "rationale": {"type": "string"},
                 "files": {"type": "object", "additionalProperties": {"type": "string"}},
                 "edits": {
                     "type": "array",
@@ -391,7 +395,6 @@ class AuthoringInterface:
                         "additionalProperties": False,
                     },
                 },
-                "rationale": {"type": "string"},
             },
             "required": ["rationale"],
             "additionalProperties": False,
@@ -406,8 +409,8 @@ class AuthoringInterface:
         rationale = payload.get("rationale")
         if not isinstance(files, dict) or not files:
             raise InvalidOutput("files 必须是非空对象")
-        if not isinstance(rationale, str) or not rationale.strip():
-            raise InvalidOutput("rationale 不能为空：说不出为什么改，就不该改")
+        if not isinstance(rationale, str):
+            rationale = ""
 
         clean: dict[str, str] = {}
         for path, content in files.items():
