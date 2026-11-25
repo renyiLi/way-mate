@@ -5,6 +5,7 @@
 ## 1. 开工顺序
 
 ```
+COLLABORATION.md         ← 三方职责与边界（先读这个）
 interface/README.md      ← 规则：谁写什么、编码要求
 interface/API.md         ← 后端现在有什么、没有什么
 interface/CHANGELOG.md   ← 有没有影响你的变更，以及「前端反馈区」
