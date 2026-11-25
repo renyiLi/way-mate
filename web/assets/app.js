@@ -736,6 +736,21 @@
     );
   }
 
+  function shortModel(value) {
+    if (!value) return null;
+    return String(value).split("/").pop();
+  }
+
+  function seatsText(seats) {
+    if (!seats) return "—";
+    const parts = [];
+    if (seats.proposer) parts.push("提案 " + shortModel(seats.proposer));
+    if (seats.proposer_b) parts.push("提案 B " + shortModel(seats.proposer_b));
+    if (seats.reviewer) parts.push("复核 " + shortModel(seats.reviewer));
+    if (seats.arbiter) parts.push("裁决 " + shortModel(seats.arbiter));
+    return parts.join(" · ") || "—";
+  }
+
   function viewRun(id) {
     const run = DATA.runs.find((item) => item.run_id === id);
     if (!run) {
@@ -753,6 +768,7 @@
       ["结果", run.outcome ? '<i class="dot ' + meta.dot + '"></i>' + meta.label : '<span class="muted">未记录</span>'],
       ["模型", esc(modelLabel(run))],
       ["协议 / 后端", esc(run.protocol || run.backend || "—")],
+      ...(run.seats ? [["座位", esc(seatsText(run.seats))]] : []),
       ["token", fmtNum(run.tokens)],
       ["调用", run.calls === null || run.calls === undefined ? "—" : esc(run.calls)],
       ["耗时", esc(fmtDuration(run.duration_ms))],
