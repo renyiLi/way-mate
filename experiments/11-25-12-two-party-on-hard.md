@@ -62,6 +62,12 @@ more_itertools/more.py: SEARCH 片段出现在 2 处（'def __len__(self):'）
 
 两档都没有增益，但**原因不同**：中档是"给了机会也没把握住"，难档是"连提案都递不上去"。
 
+> **更正（11/25/15 追加）**：本文档里"模型把签名猜错了（elem vs value）"这句是**错的**。
+> `numeric_range.__contains__(self, elem)` 的 `elem` 是正确的——文件里同时存在
+> `bucket.__contains__(self, value)`（第 1183 行）与 `numeric_range.__contains__(self, elem)`（第 2336 行）。
+> 真实原因是**多行片段整体无法逐字匹配**，而我们的报错只说"找不到（首行：…）"，
+> 把差异点掩盖了。已修：报错现在会指出第几行不一致。
+
 ## 下一步（方向已明确）
 
 SEARCH/REPLACE 对长文件不友好，而**执行循环（后端 B）恰好有 grep/sed 可以取到逐字片段**。

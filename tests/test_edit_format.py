@@ -45,8 +45,16 @@ def test_replaces_unique_fragment():
 
 def test_reject_when_not_found():
     edit = Edit(path="m.py", search="完全不存在的一段", replace="x")
-    with pytest.raises(EditError, match="找不到 SEARCH 片段"):
+    with pytest.raises(EditError, match="第 1 行在文件里不存在"):
         apply_edit(SAMPLE, edit)
+
+
+def test_reports_which_line_differs():
+    """片段首行对得上但后面有差异时，要指出第几行不对。"""
+    content = "def f(self, elem):\n    return 1\n"
+    edit = Edit(path="m.py", search="def f(self, elem):\n    return 999", replace="x")
+    with pytest.raises(EditError, match="第 2 行与文件不一致"):
+        apply_edit(content, edit)
 
 
 def test_reject_when_ambiguous():
@@ -187,7 +195,7 @@ def test_interface_reports_unmatched_fragment_clearly(tmp_path: Path):
     (tmp_path / "m.py").write_text(SAMPLE, encoding="utf-8")
     contract = _contract_for(tmp_path)
 
-    with pytest.raises(Exception, match="找不到 SEARCH 片段"):
+    with pytest.raises(Exception, match="第 1 行在文件里不存在"):
         AuthoringInterface().parse_proposal(
             {"edits": [{"path": "m.py", "search": "根本不存在", "replace": "x"}], "rationale": "试试"},
             contract,

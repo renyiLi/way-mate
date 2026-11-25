@@ -31,6 +31,7 @@ from dbw.delivery import (  # noqa: E402
     strip_exact_section,
 )
 from dbw.gates import lint_baseline, run_all  # noqa: E402
+from dbw.protocol.envelope import Budget  # noqa: E402
 from dbw.protocol.machine import SeatAssignment, execute  # noqa: E402
 from dbw.protocol.base import ProviderRegistry  # noqa: E402
 
@@ -68,6 +69,7 @@ def main() -> int:
     parser.add_argument("--task", default="", help="任务目录；用真实仓库时指定")
     parser.add_argument("--timeout", type=float, default=240.0, help="单次模型调用超时（秒）")
     parser.add_argument("--max-tokens", type=int, default=8192, help="单次模型输出预算")
+    parser.add_argument("--budget-tokens", type=int, default=200000, help="整个运行的总 token 预算")
     args = parser.parse_args()
 
     settings = Settings()
@@ -132,6 +134,7 @@ def main() -> int:
         max_repair_rounds=args.rounds - 1,
         request_timeout_s=args.timeout,
         max_output_tokens=args.max_tokens,
+        budget=Budget(max_tokens=args.budget_tokens),
     )
     audit.close()
 
@@ -149,7 +152,7 @@ def main() -> int:
             + (f"（{', '.join(failed)}）" if failed else "")
         )
         for reason in record.dropped[:3]:
-            print(f"      丢弃：{reason}")
+            print(f"      备注：{reason}")
 
     print("\n" + "═" * 78)
     print(f"结果   {run.outcome.value} —— {run.reason}")

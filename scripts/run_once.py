@@ -29,6 +29,7 @@ def main() -> int:
     parser.add_argument("--task", default="", help="任务目录（tasks/xxx），自动读配方")
     parser.add_argument("--strip-exact", action="store_true", help="摘掉契约里的 exact 段（对照组）")
     parser.add_argument("--timeout", type=float, default=180.0, help="单次模型调用超时（秒）")
+    parser.add_argument("--max-tokens", type=int, default=0, help="单次输出预算；0 用默认值")
     args = parser.parse_args()
 
     profile = PROFILES[args.provider]
@@ -72,6 +73,7 @@ def main() -> int:
         strip_exact=args.strip_exact,
         prepare=prepare,
         timeout_s=args.timeout,
+        max_tokens=args.max_tokens or 4096,
     )
 
     if result.error:

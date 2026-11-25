@@ -101,9 +101,26 @@ def apply_edit(content: str, edit: Edit) -> str:
     ]
 
     if not hits:
-        first = edit.search.strip().splitlines()[0][:60] if edit.search.strip() else "(空)"
+        # 定位到具体哪一行不一致——只说“找不到”会误导模型（和排查的人）
+        first_line = target[0]
+        starts = [index for index, line in enumerate(haystack) if line == first_line]
+        if not starts:
+            raise EditError(
+                f"{edit.path}: SEARCH 片段的第 1 行在文件里不存在：{first_line!r}。"
+                "请从文件里逐字复制要替换的代码。"
+            )
+        start = starts[0]
+        for offset, want in enumerate(target):
+            position = start + offset
+            actual = haystack[position] if position < len(haystack) else None
+            if actual != want:
+                raise EditError(
+                    f"{edit.path}: SEARCH 片段第 {offset + 1} 行与文件不一致："
+                    f"片段写的是 {want!r}，文件第 {position + 1} 行是 {actual!r}。"
+                    "请从文件里逐字复制。"
+                )
         raise EditError(
-            f"{edit.path}: 找不到 SEARCH 片段（首行：{first!r}）。"
+            f"{edit.path}: 找不到 SEARCH 片段（首行：{first_line!r}）。"
             "请确保片段与文件内容逐字一致，不要包含行号或省略号。"
         )
     if len(hits) > 1:
