@@ -1,0 +1,22 @@
+{
+  "id": "moreitertools-1342",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "4aeb4338ae1407d8da9723e86da99efeb446f719",
+  "pull_request": 1342,
+  "title": "chunked_even 对非法块大小的处理与 chunked 不一致",
+  "statement": "more_itertools.chunked_even 在块大小 n 为 0 或负数时的行为与同族的 chunked 不一致：chunked 对 n<0 抛 ValueError、对 n=0 返回空，而 chunked_even 两者都直接崩（ValueError 消息来自内部实现，n=0 时甚至抛出无关的 ValueError）。请让 chunked_even 的入参校验与 chunked 保持一致。",
+  "target_test": [
+    "tests/test_more.py::ChunkedEvenTests::test_negative_chunk_size",
+    "tests/test_more.py::ChunkedEvenTests::test_zero_chunk_size"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": ["more_itertools/more.py"],
+  "forbidden": ["tests/"],
+  "tier": "easy",
+  "solution_note": "上游修法是在函数入口加两行校验（n<0 抛 ValueError、n==0 直接 return）；statement 只说与 chunked 不一致，不提示加什么校验。",
+  "verified": {
+    "red_without_fix": "2 failed, 620 passed, 11318 subtests passed",
+    "green_with_fix": "622 passed, 11318 subtests passed",
+    "fix_size": "5 行新增"
+  }
+}
