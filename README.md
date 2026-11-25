@@ -186,7 +186,7 @@ node web/check.mjs                # 回归：起 headless Chrome 跑一组真实
 - 页面数据由 [`web/build-data.py`](web/build-data.py) 在构建期生成，来源是 `tasks/*/task.json` 与 `runs/audit.jsonl`（方案 B）
 
 外壳只负责"看"，不参与判定：页面不发任何请求，也不自己算"是否可交付"——只读 `all_green`。
-要让壳显示真实运行结果，应当由脚本把 `GateReport` 导出成 JSON 再替换常量，而不是在页面里重算一遍规则。
+数据由 `web/build-data.py` 在构建期生成；改了 `tasks/`、跑过新的 `runs/` 之后重跑一次再刷新即可。
 
 ## 目录
 
