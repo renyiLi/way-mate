@@ -439,7 +439,9 @@
   function modelStats(runs) {
     const groups = new Map();
     runs.forEach((run) => {
-      const key = modelLabel(run);
+      /* 按模型名归组，不按 provider/model 拼接：同一次模型在个别 run 里缺 provider，
+         拼起来会把它拆成两行（tabulate-366 上就是这样） */
+      const key = run.model || run.provider || "—";
       const group = groups.get(key) || { label: key, total: 0, accepted: 0, tokens: 0, tokenRuns: 0, ms: 0, msRuns: 0 };
       group.total += 1;
       if (run.outcome === "accepted") group.accepted += 1;
@@ -477,6 +479,60 @@
     );
   }
 
+  function runTimeline(runs) {
+    const timed = runs
+      .map((run) => ({ run, at: Date.parse(run.started_at) }))
+      .filter((item) => !isNaN(item.at))
+      .sort((x, y) => x.at - y.at);
+    if (timed.length < 2) return "";
+
+    const start = timed[0].at;
+    const end = timed[timed.length - 1].at;
+    const span = end - start || 1;
+    const slots = new Map();
+
+    const placed = timed.map(({ run, at }) => {
+      const pct = ((at - start) / span) * 100;
+      const key = Math.round(pct);
+      const index = slots.get(key) || 0;
+      slots.set(key, index + 1);
+      return { run, pct, index };
+    });
+
+    const maxStack = Math.max.apply(null, Array.from(slots.values()));
+    const height = 30 + maxStack * 11 + 22;
+
+    const dots = placed
+      .map(({ run, pct, index }) => {
+        const cls =
+          run.outcome === "accepted" ? "is-pass" : run.outcome === "rejected" ? "is-fail" : "is-unknown";
+        const label =
+          fmtTime(run.started_at) + " · " + (run.task_id || run.run_id) + " · " +
+          modelLabel(run) + " · " + outcomeMeta(run.outcome).label;
+        return (
+          '<a class="tl-dot ' + cls + '" style="left:' + pct.toFixed(2) + "%;top:" + (26 + index * 11) + 'px" ' +
+          'href="#/runs/' + encodeURIComponent(run.run_id) + '" ' +
+          'title="' + esc(label) + '" aria-label="' + esc(label) + '"></a>'
+        );
+      })
+      .join("");
+
+    return (
+      '<div class="run-timeline-scroll">' +
+      '<div class="run-timeline" role="group" aria-label="这个任务上的运行时间轴" style="height:' + height + 'px">' +
+      '<div class="run-timeline-track" aria-hidden="true"></div>' +
+      dots +
+      '<p class="run-timeline-end run-timeline-end--start">' + esc(fmtTime(timed[0].run.started_at)) + "</p>" +
+      '<p class="run-timeline-end run-timeline-end--end">' + esc(fmtTime(timed[timed.length - 1].run.started_at)) + "</p>" +
+      "</div></div>" +
+      '<p class="run-timeline-legend">' +
+      '<i class="tl-dot is-pass"></i>交付成立 ' +
+      '<i class="tl-dot is-fail"></i>驳回 ' +
+      '<i class="tl-dot is-unknown"></i>未记录 · 同一时刻多次运行会往下叠，点圆点进详情' +
+      "</p>"
+    );
+  }
+
   function viewTask(id) {
     const task = DATA.tasks.find((item) => item.id === id);
     if (!task) {
@@ -511,6 +567,7 @@
         ? '<details class="contract"><summary>contract.yaml 原文 · ' + esc(task.contract_source) + "</summary><pre><code>" + esc(task.contract_yaml) + "</code></pre></details>"
         : "") +
       '<h3 class="sub-title">这个任务上的运行 <span class="count">' + runs.total + "</span></h3>" +
+      runTimeline(related) +
       runsTable(related, {
         caption: task.id + " 的运行记录",
         empty: "这个任务还没有运行记录。"
@@ -1026,6 +1083,23 @@
 
   let lastPath = "";
 
+  function routeTitle(route) {
+    switch (route.name) {
+      case "tasks":
+        return "任务 · 随行交付台";
+      case "task":
+        return route.id + " · 任务 · 随行交付台";
+      case "runs":
+        return "运行 · 随行交付台";
+      case "run":
+        return route.id + " · 运行 · 随行交付台";
+      case "compare":
+        return "对比 · 随行交付台";
+      default:
+        return "随行交付台 — 模型可以争论，闸门说了算";
+    }
+  }
+
   function bindAppEvents(route) {
     const app = $("#app");
     if (!app) return;
@@ -1073,10 +1147,22 @@
         (target === "tasks" && (route.name === "tasks" || route.name === "task")) ||
         (target === "runs" && (route.name === "runs" || route.name === "run" || route.name === "compare"));
       link.classList.toggle("is-active", on);
+      link.setAttribute("aria-current", on ? "page" : "false");
     });
 
+    document.title = routeTitle(route);
+
     /* 只有换了页面才回到顶部；切筛选、改关键字不动滚动位置 */
-    if (path !== lastPath) window.scrollTo(0, 0);
+    if (path !== lastPath) {
+      window.scrollTo(0, 0);
+      if (!isHome && app) {
+        const heading = app.querySelector("h2");
+        if (heading) {
+          heading.setAttribute("tabindex", "-1");
+          heading.focus({ preventScroll: true });
+        }
+      }
+    }
     lastPath = path;
   }
 

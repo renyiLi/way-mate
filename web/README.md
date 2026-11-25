@@ -38,7 +38,7 @@ python scripts/serve_web.py   # 起预览；或直接双击 index.html
 |---|---|---|
 | `#/` | 概览：主张、判定板、任务摘要、闸门统计、最近 8 次运行 | `summary`、`gate_stats`、`runs[]`、`tasks[]` |
 | `#/tasks` | 任务列表 | `tasks[]` |
-| `#/tasks/<id>` | 任务详情：契约字段、契约原文、这个任务上的运行、按模型汇总 | `tasks[]` + `runs[]` 按 `task_id` 过滤 |
+| `#/tasks/<id>` | 任务详情：契约字段、契约原文、运行时间轴 + 运行表、按模型汇总 | `tasks[]` + `runs[]` 按 `task_id` 过滤 |
 | `#/runs` | 运行列表：按结果筛选（全部 / 交付成立 / 驳回 / 未记录） | `runs[]` |
 | `#/runs/<id>` | 运行详情：元信息、闸门逐项判定、事件时间线 | `runs[].gate`、`runs[].timeline` |
 | `#/runs/compare?a=<id>&b=<id>` | 两次运行对比：元信息与四类闸门逐行对照 | `runs[]` 里的两条 |
