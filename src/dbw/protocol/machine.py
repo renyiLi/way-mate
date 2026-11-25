@@ -19,6 +19,7 @@ from typing import Any, Callable
 from ..contract import Contract
 from ..gates import GateReport
 from .base import (
+    AdapterError,
     Message,
     ModelRequest,
     ModelResponse,
@@ -179,6 +180,8 @@ class ProtocolRunner:
         max_repair_rounds: int | None = None,
         no_improvement_limit: int = 2,
         memory: Any = None,
+        request_timeout_s: float = 180.0,
+        max_output_tokens: int = 8192,
     ) -> None:
         seats.validate()
         self.spec = get_interface(interface)
@@ -189,6 +192,9 @@ class ProtocolRunner:
         self.contract = contract
         self.audit = audit
         self.memory = memory
+        # 单次模型调用的超时。推理模型 / 长补丁复核可能远超 120s，必须可配
+        self.request_timeout_s = request_timeout_s
+        self.max_output_tokens = max_output_tokens
         self.budget = budget or Budget()
         self.run_id = run_id or new_id("run")
         self.hash = contract_hash(contract)
@@ -215,6 +221,9 @@ class ProtocolRunner:
             self._finish(Outcome.BUDGET_EXHAUSTED, str(exc))
         except InvalidOutput as exc:
             self._finish(Outcome.REJECTED, f"输出不合法：{exc}")
+        except AdapterError as exc:
+            # 超时 / 限流不应该把批量实验打断，当作一次失败的运行记下来
+            self._finish(Outcome.REJECTED, f"模型调用失败：{exc}")
         return self.run
 
     # ------------------------------------------------------------ 主循环
@@ -374,9 +383,9 @@ class ProtocolRunner:
         request = ModelRequest(
             messages=(Message("system", system), Message("user", user)),
             response_schema=schema,
-            max_tokens=4096,
+            max_tokens=self.max_output_tokens,
             temperature=0.2,
-            timeout_s=120.0,
+            timeout_s=self.request_timeout_s,
             idempotency_key=f"{self.run_id}:{seat.value}:{phase.value}:{self._seq}",
         )
         started = time.perf_counter()

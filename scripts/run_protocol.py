@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -64,15 +65,29 @@ def main() -> int:
     parser.add_argument("--arbiter", default="", help="留空即 2 人协议")
     parser.add_argument("--rounds", type=int, default=2)
     parser.add_argument("--strip-exact", action="store_true", help="摘掉 exact（制造确定性失败）")
+    parser.add_argument("--task", default="", help="任务目录；用真实仓库时指定")
+    parser.add_argument("--timeout", type=float, default=240.0, help="单次模型调用超时（秒）")
+    parser.add_argument("--max-tokens", type=int, default=8192, help="单次模型输出预算")
     args = parser.parse_args()
 
     settings = Settings()
-    prepare_workspace(FIXTURE, WORK)
-    if args.strip_exact:
-        strip_exact_section(WORK / "contract.yaml")
+    if args.task:
+        recipe = json.loads((ROOT / args.task / "task.json").read_text(encoding="utf-8"))
+        work = ROOT / ".work" / "tasks" / recipe["id"]
+        task_text = recipe["statement"]
+        targets = recipe.get("target_files") or [""]
+        target_file = targets[0]
+        reset_workspace(work)
+    else:
+        work = WORK
+        prepare_workspace(FIXTURE, work)
+        if args.strip_exact:
+            strip_exact_section(work / "contract.yaml")
+        task_text = "parse_kv 未剥离行内注释；缺 '=' 时异常消息不对"
+        target_file = "pkg/parser.py"
 
-    contract = load_contract(WORK / "contract.yaml")
-    baseline = lint_baseline(contract, WORK)
+    contract = load_contract(work / "contract.yaml")
+    baseline = lint_baseline(contract, work)
     audit = AuditLog(RUNS / "audit.jsonl")
 
     registry = ProviderRegistry()
@@ -90,9 +105,9 @@ def main() -> int:
     seats = SeatAssignment(proposer=proposer_key, reviewer=reviewer_key, arbiter=arbiter_key)
 
     def evaluate(patch, _outcome):
-        reset_workspace(WORK)
-        apply_patch(WORK, patch)
-        return run_all(contract, WORK, baseline, base_ref="HEAD")
+        reset_workspace(work)
+        apply_patch(work, patch)
+        return run_all(contract, work, baseline, base_ref="HEAD")
 
     print("═" * 78)
     print("真实模型多轮协议")
@@ -103,18 +118,20 @@ def main() -> int:
     print(f"  复核座位 {reviewer_key}")
     print(f"  裁决座位 {arbiter_key or '（无，2 人协议）'}")
     print(f"  契约     exact {'已摘掉' if args.strip_exact else f'{len(contract.exact)} 条生效'}")
-    print(f"  基线     {git_sha(WORK)}")
+    print(f"  基线     {git_sha(work)}")
     print(f"  轮次上限 {args.rounds}")
 
     run = execute(
         interface="authoring",
-        task=build_task(WORK, contract, "parse_kv 未剥离行内注释；缺 '=' 时异常消息不对", "pkg/parser.py"),
+        task=build_task(work, contract, task_text, target_file),
         seats=seats,
         registry=registry,
         evaluate=evaluate,
         contract=contract,
         audit=audit,
         max_repair_rounds=args.rounds - 1,
+        request_timeout_s=args.timeout,
+        max_output_tokens=args.max_tokens,
     )
     audit.close()
 
