@@ -29,6 +29,20 @@ python scripts/serve_web.py   # 起预览；或直接双击 index.html
 
 改了 `tasks/`、跑过新的 `runs/` 之后，重跑一次 `build-data.py` 再刷新页面。
 
+## 页面结构（hash 路由）
+
+不用框架、不用构建，`file://` 双击也能走完全部页面：
+
+| 路由 | 视图 | 读的是 |
+|---|---|---|
+| `#/` | 概览：主张、判定板、任务摘要、闸门统计、最近 8 次运行 | `summary`、`gate_stats`、`runs[]`、`tasks[]` |
+| `#/tasks` | 任务列表 | `tasks[]` |
+| `#/tasks/<id>` | 任务详情：契约字段、契约原文、这个任务上的全部运行 | `tasks[]` + `runs[]` 按 `task_id` 过滤 |
+| `#/runs` | 运行列表：按结果筛选（全部 / 交付成立 / 驳回 / 未记录） | `runs[]` |
+| `#/runs/<id>` | 运行详情：元信息、闸门逐项判定、事件时间线 | `runs[].gate`、`runs[].timeline` |
+
+路由不存在时回到概览；`task` / `run` 找不到时给"找不到 + 回列表"的提示，不白屏。
+
 ## 数据从哪来（方案 B）
 
 后端没有 HTTP 服务（`interface/API.md` §0），所以页面不联网、不 fetch，也不按
@@ -54,6 +68,7 @@ python scripts/serve_web.py   # 起预览；或直接双击 index.html
 - `runs[].started_at` / `ended_at` —— 取该 run 全部事件的 `ts` 最小/最大值，转成 +08:00
 - `runs[].duration_ms` —— 仅当 `run_start` 与 `run_end` 都存在时才算，否则 `null`（不编数字）
 - `runs[].tokens` —— `run_end.tokens` → `run_end.budget.tokens` → `model_response.usage.total` 求和
+- `runs[].timeline` —— 每个事件一个条目，白名单字段：`ts/event/seat/attempt/phase/model/provider/latency_ms/tokens/degraded/stop_reason/claim_done/all_green/gate_total/gate_failed`。**不含 `raw_text`、prompt、`metrics.tail`**
 - `tasks[].runs` / `tasks[].last_run` —— 按 `task_id` 关联审计记录得出的计数
 - `summary.runs_with_gate` —— 有闸门报告的运行数（不是 `gate_report` 事件总数）
 

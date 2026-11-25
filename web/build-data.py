@@ -141,6 +141,50 @@ def slim_gate(report):
     }
 
 
+def slim_event(event):
+    """时间线用：只留能展示的标量，丢掉 raw_text / prompt 这类大块文本。"""
+    out = {}
+    moment = local_iso(parse_ts(event.get("ts")))
+    if moment:
+        out["ts"] = moment
+    if event.get("event"):
+        out["event"] = event["event"]
+    for key in (
+        "seat",
+        "attempt",
+        "phase",
+        "interface",
+        "protocol",
+        "provider",
+        "model",
+        "latency_ms",
+        "degraded",
+        "finish_reason",
+        "stop_reason",
+        "claim_done",
+        "calls",
+        "rounds",
+        "events",
+        "outcome",
+    ):
+        if event.get(key) is not None:
+            out[key] = event[key]
+    usage = event.get("usage")
+    if isinstance(usage, dict) and isinstance(usage.get("total"), int):
+        out["tokens"] = usage["total"]
+    elif isinstance(event.get("tokens"), int):
+        out["tokens"] = event["tokens"]
+    report = event.get("report")
+    if isinstance(report, dict) and event.get("event") == "gate_report":
+        results = report.get("results") or []
+        out["all_green"] = bool(report.get("all_green"))
+        out["gate_total"] = len(results)
+        out["gate_failed"] = sum(1 for item in results if not item.get("ok"))
+        if event.get("signature"):
+            out["signature"] = event["signature"]
+    return out
+
+
 def build_run(events):
     events = sorted(events, key=lambda e: parse_ts(e.get("ts")) or datetime.min.replace(tzinfo=timezone.utc))
     starts = [e for e in events if e.get("event") == "run_start"]
@@ -205,6 +249,7 @@ def build_run(events):
         "gate_signature": gate_event.get("signature"),
         "gate": slim_gate(gate_report) if gate_report else None,
         "events": len(events),
+        "timeline": [slim_event(event) for event in events],
     }
 
 

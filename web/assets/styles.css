@@ -770,6 +770,143 @@ table.runs tbody tr.is-hidden { display: none; }
   font-size: 13.5px; line-height: 1.8; color: var(--muted);
 }
 
+/* ---------- 视图骨架（路由页） ------------------------------------------- */
+
+[hidden] { display: none !important; }
+
+.crumbs {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+  margin-bottom: 14px;
+}
+.crumbs a {
+  color: var(--ink-2); text-decoration: none;
+  border-bottom: 1px solid transparent; padding-bottom: 1px;
+}
+.crumbs a:hover { border-bottom-color: var(--ink); color: var(--ink); }
+.crumbs i { font-style: normal; color: var(--rule); }
+
+.sub-title {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-top: 34px;
+  font-size: 16px; font-weight: 700; letter-spacing: .01em;
+}
+.sub-title .count { font-family: var(--mono); font-size: 11.5px; font-weight: 400; color: var(--muted); }
+
+.kv {
+  margin-top: 18px;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 28px;
+  border-top: 1px solid var(--rule);
+}
+.kv > div {
+  display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.kv dt { font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+.kv dd { font-size: 13px; line-height: 1.6; color: var(--ink-2); overflow-wrap: anywhere; }
+.kv.is-single { grid-template-columns: minmax(0, 1fr); }
+.kv-note { display: block; margin-top: 2px; font-size: 11.5px; color: var(--muted); }
+
+.chips-inline { margin-top: 16px; padding-top: 0; }
+
+.link-more {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--ink-2); text-decoration: none;
+  border-bottom: 1px solid var(--rule); padding-bottom: 1px;
+  white-space: nowrap;
+}
+.link-more:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 18px; }
+.filter {
+  font-family: var(--mono); font-size: 12px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, border-color .16s ease;
+}
+.filter b { font-weight: 500; color: var(--muted); margin-left: 4px; }
+.filter:hover { border-color: var(--ink); }
+.filter.is-on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.filter.is-on b { color: rgba(232, 233, 226, .7); }
+
+tr.run-row { cursor: pointer; }
+.row-link { text-decoration: none; color: inherit; border-bottom: 1px solid transparent; }
+.run-row:hover .row-link { border-bottom-color: var(--ink); }
+
+.cell-clip {
+  display: inline-block;
+  max-width: 150px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  vertical-align: bottom;
+}
+.cell-clip.clamp-model { max-width: 186px; }
+
+.task h3 a { text-decoration: none; color: inherit; }
+.task h3 a:hover { border-bottom: 1px solid var(--ink); }
+
+.run-id { margin-top: -6px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.empty a { color: var(--ink); border-bottom: 1px solid var(--rule); text-decoration: none; }
+.empty a:hover { border-bottom-color: var(--ink); }
+
+.code-block {
+  margin-top: 16px; padding: 14px 16px;
+  background: var(--sheet);
+  border: 1px solid var(--ink); border-radius: 3px;
+  font-family: var(--mono); font-size: 13px;
+  overflow-x: auto;
+}
+
+/* ---------- 闸门详情 ------------------------------------------------------ */
+
+.gate-verdict {
+  display: inline-block; margin-top: 14px;
+  padding: 4px 10px;
+  border: 1px solid currentColor; border-radius: 2px;
+  font-family: var(--mono); font-size: 12px;
+}
+.gate-verdict.is-pass { color: var(--pass); }
+.gate-verdict.is-fail { color: var(--seal); }
+
+.gate-lines { margin-top: 12px; border-top: 1px solid var(--ink); }
+.gate-line {
+  display: grid; grid-template-columns: 10px 64px minmax(0, 1fr);
+  gap: 10px; align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.gate-line .lamp { background: var(--rule); }
+.gate-line[data-state="pass"] .lamp { background: var(--pass); box-shadow: 0 0 0 3px rgba(42, 90, 67, .16); }
+.gate-line[data-state="fail"] .lamp { background: var(--seal); box-shadow: 0 0 0 3px rgba(168, 44, 27, .14); }
+.gate-line[data-state="fail"] .check-name { color: var(--seal); }
+.gate-line-value { font-family: var(--mono); font-size: 12px; color: var(--ink); }
+.gate-line-detail {
+  grid-column: 2 / -1;
+  margin-top: 4px;
+  font-size: 12px; line-height: 1.65; color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- 事件时间线 ---------------------------------------------------- */
+
+.timeline { margin-top: 14px; border-top: 1px solid var(--ink); }
+.timeline li {
+  display: grid; grid-template-columns: 62px 116px minmax(0, 1fr);
+  gap: 14px; align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.tl-time { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+.tl-event { font-family: var(--mono); font-size: 11.5px; color: var(--ink); }
+.tl-body { font-size: 12.5px; line-height: 1.65; color: var(--ink-2); overflow-wrap: anywhere; }
+.timeline li.is-bad .tl-event { color: var(--seal); }
+
 /* ---------- 响应式 -------------------------------------------------------- */
 
 @media (max-width: 980px) {
@@ -799,8 +936,10 @@ table.runs tbody tr.is-hidden { display: none; }
   .board-task { flex-wrap: wrap; gap: 2px 12px; }
   .board.has-verdict .board-foot { padding-right: 80px; }
   .board-foot { min-height: 84px; }
-  .band-head { flex-direction: column; align-items: stretch; }
+  .band-head { flex-wrap: wrap; }
   .seg { width: 100%; }
+  .kv { grid-template-columns: minmax(0, 1fr); }
+  .timeline li { grid-template-columns: 52px 88px minmax(0, 1fr); gap: 10px; }
   .seg-btn { flex: 1; align-items: center; padding: 9px 8px; }
 }
 
@@ -809,6 +948,12 @@ table.runs tbody tr.is-hidden { display: none; }
   .hero-actions .btn { flex: 1; }
   .nav { gap: 14px; }
   td, th { padding-right: 14px; }
+
+  /* 窄屏时间线：时间 + 事件同行，正文另起一行 */
+  .timeline li { grid-template-columns: 52px minmax(0, 1fr); row-gap: 2px; }
+  .tl-event { grid-column: 2; overflow-wrap: anywhere; }
+  .tl-body { grid-column: 2; }
+  .gate-line { grid-template-columns: 10px 56px minmax(0, 1fr); }
 }
 
 /* ---------- 动效偏好 ------------------------------------------------------ */

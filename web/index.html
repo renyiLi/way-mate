@@ -16,16 +16,15 @@
 
 <header class="topbar">
   <div class="wrap topbar-in">
-    <a class="brand" href="#top">
+    <a class="brand" href="#/">
       <span class="brand-seal" aria-hidden="true">验</span>
       <span class="brand-name">随行交付台</span>
       <span class="brand-meta">delivery-bench v0.2</span>
     </a>
-    <nav class="nav" aria-label="页面段落">
-      <a href="#claim">主张</a>
-      <a href="#tasks">任务</a>
-      <a href="#gates">闸门</a>
-      <a href="#records">记录</a>
+    <nav class="nav" aria-label="主导航">
+      <a href="#/" data-route="home">概览</a>
+      <a href="#/tasks" data-route="tasks">任务</a>
+      <a href="#/runs" data-route="runs">运行</a>
     </nav>
     <p class="status"><span class="status-dot" aria-hidden="true"></span>只读 · 构建期快照</p>
   </div>
@@ -33,169 +32,178 @@
 
 <main id="main">
 
-  <section class="hero" id="claim">
-    <div class="wrap hero-grid">
-      <div class="hero-copy">
-        <p class="clause"><span>第 1 条</span>主张</p>
-        <h1 class="hero-title">模型可以争论，<br>闸门说了算。</h1>
-        <p class="hero-lead">契约不是一纸文档，是能跑起来的验收标准。模型交出补丁，四类闸门逐项判定——<strong>全绿才算交付</strong>，模型的自述不算数。这一页只读真实记录：<span class="mono">runs/audit.jsonl</span> 与 <span class="mono">tasks/</span>。</p>
-        <div class="hero-actions">
-          <a class="btn btn-ink" href="#records">看运行记录</a>
-          <a class="btn btn-ghost" href="#tasks">读任务与契约</a>
-        </div>
-        <dl class="facts" id="facts">
-          <div><dt>任务</dt><dd>—</dd></div>
-          <div><dt>运行</dt><dd>—</dd></div>
-          <div><dt>交付成立</dt><dd>—</dd></div>
-          <div><dt>闸门判定</dt><dd>—</dd></div>
-        </dl>
-      </div>
+  <div id="home" data-view="home">
 
-      <aside class="board" id="board" aria-labelledby="board-title">
-        <div class="board-head">
-          <h2 class="board-title" id="board-title">判定板</h2>
-          <button class="board-replay" id="replay" type="button">回放</button>
-        </div>
-        <p class="board-task"><span id="board-task">最近一次运行</span><span class="board-meta" id="board-meta"></span></p>
-
-        <ol class="checks" id="checks" aria-label="四类闸门判定">
-          <li class="check" data-state="idle">
-            <span class="lamp" aria-hidden="true"></span>
-            <span class="check-name">tests</span>
-            <span class="check-desc">验收命令 exit 0</span>
-            <span class="check-value">—</span>
-          </li>
-          <li class="check" data-state="idle">
-            <span class="lamp" aria-hidden="true"></span>
-            <span class="check-name">lint</span>
-            <span class="check-desc">新增问题 ≤ max_new</span>
-            <span class="check-value">—</span>
-          </li>
-          <li class="check" data-state="idle">
-            <span class="lamp" aria-hidden="true"></span>
-            <span class="check-name">api</span>
-            <span class="check-desc">冻结符号仍在</span>
-            <span class="check-value">—</span>
-          </li>
-          <li class="check" data-state="idle">
-            <span class="lamp" aria-hidden="true"></span>
-            <span class="check-name">diff</span>
-            <span class="check-desc">改动不越预算</span>
-            <span class="check-value">—</span>
-          </li>
-        </ol>
-
-        <div class="board-foot" aria-live="polite">
-          <div class="board-count-wrap">
-            <p class="board-count"><b id="fail-count">—</b> 项未通过</p>
-            <p class="board-sub" id="board-sub">等待数据</p>
+    <section class="hero" id="claim">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="clause"><span>第 1 条</span>主张</p>
+          <h1 class="hero-title">模型可以争论，<br>闸门说了算。</h1>
+          <p class="hero-lead">契约不是一纸文档，是能跑起来的验收标准。模型交出补丁，四类闸门逐项判定——<strong>全绿才算交付</strong>，模型的自述不算数。这一页只读真实记录：<span class="mono">runs/audit.jsonl</span> 与 <span class="mono">tasks/</span>。</p>
+          <div class="hero-actions">
+            <a class="btn btn-ink" href="#/runs">看运行记录</a>
+            <a class="btn btn-ghost" href="#/tasks">读任务与契约</a>
           </div>
-          <button class="seal" id="seal" type="button" title="盖章" aria-label="给这份判定盖章">判定</button>
+          <dl class="facts" id="facts">
+            <div><dt>任务</dt><dd>—</dd></div>
+            <div><dt>运行</dt><dd>—</dd></div>
+            <div><dt>交付成立</dt><dd>—</dd></div>
+            <div><dt>闸门判定</dt><dd>—</dd></div>
+          </dl>
         </div>
-      </aside>
-    </div>
-  </section>
 
-  <div class="tape" aria-hidden="true"></div>
+        <aside class="board" id="board" aria-labelledby="board-title">
+          <div class="board-head">
+            <h2 class="board-title" id="board-title">判定板</h2>
+            <button class="board-replay" id="replay" type="button">回放</button>
+          </div>
+          <p class="board-task"><span id="board-task">最近一次运行</span><span class="board-meta" id="board-meta"></span></p>
 
-  <section class="band" id="tasks">
-    <div class="wrap band-grid">
-      <p class="clause"><span>第 2 条</span>任务</p>
-      <div class="band-body">
-        <h2>任务与契约</h2>
-        <p class="lead">每个任务带一份 <span class="mono">contract.yaml</span>：验收命令、冻结符号、diff 预算、禁止路径都在里面。下面这些字段从 <span class="mono">tasks/*/task.json</span> 直接读，不是手写的。</p>
-        <div class="tasks" id="tasks-list"></div>
+          <ol class="checks" id="checks" aria-label="四类闸门判定">
+            <li class="check" data-state="idle">
+              <span class="lamp" aria-hidden="true"></span>
+              <span class="check-name">tests</span>
+              <span class="check-desc">验收命令 exit 0</span>
+              <span class="check-value">—</span>
+            </li>
+            <li class="check" data-state="idle">
+              <span class="lamp" aria-hidden="true"></span>
+              <span class="check-name">lint</span>
+              <span class="check-desc">新增问题 ≤ max_new</span>
+              <span class="check-value">—</span>
+            </li>
+            <li class="check" data-state="idle">
+              <span class="lamp" aria-hidden="true"></span>
+              <span class="check-name">api</span>
+              <span class="check-desc">冻结符号仍在</span>
+              <span class="check-value">—</span>
+            </li>
+            <li class="check" data-state="idle">
+              <span class="lamp" aria-hidden="true"></span>
+              <span class="check-name">diff</span>
+              <span class="check-desc">改动不越预算</span>
+              <span class="check-value">—</span>
+            </li>
+          </ol>
+
+          <div class="board-foot" aria-live="polite">
+            <div class="board-count-wrap">
+              <p class="board-count"><b id="fail-count">—</b> 项未通过</p>
+              <p class="board-sub" id="board-sub">等待数据</p>
+            </div>
+            <button class="seal" id="seal" type="button" title="盖章" aria-label="给这份判定盖章">判定</button>
+          </div>
+        </aside>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="band" id="gates">
-    <div class="wrap band-grid">
-      <p class="clause"><span>第 3 条</span>闸门</p>
-      <div class="band-body">
-        <h2>四个闸门，只回答“过没过”</h2>
-        <p class="lead">闸门不解释、不建议、不参与讨论，只输出一个布尔值和一组指标，直接落进审计日志。<span class="mono">all_green</span> 是唯一判定，页面不自己算。</p>
+    <div class="tape" aria-hidden="true"></div>
 
-        <div class="gates">
-          <article class="gate">
-            <div class="gate-head"><span class="gate-code">tests</span><span class="gate-tag">功能</span></div>
-            <h3>验收命令全绿</h3>
-            <dl>
-              <div><dt>判什么</dt><dd>契约里每条验收命令的退出码全部为 0</dd></div>
-              <div><dt>防什么</dt><dd>功能压根没做对</dd></div>
-              <div><dt>记录</dt><dd class="gate-stat" data-gate-stat="tests">—</dd></div>
-            </dl>
-          </article>
-
-          <article class="gate">
-            <div class="gate-head"><span class="gate-code">lint</span><span class="gate-tag">整洁</span></div>
-            <h3>新增问题不超预算</h3>
-            <dl>
-              <div><dt>判什么</dt><dd>打完补丁的告警数减去补丁前基线 ≤ max_new</dd></div>
-              <div><dt>防什么</dt><dd>越改越乱</dd></div>
-              <div><dt>记录</dt><dd class="gate-stat" data-gate-stat="lint">—</dd></div>
-            </dl>
-          </article>
-
-          <article class="gate">
-            <div class="gate-head"><span class="gate-code">api</span><span class="gate-tag">接口</span></div>
-            <h3>冻结的符号还在</h3>
-            <dl>
-              <div><dt>判什么</dt><dd>契约冻结的公开符号逐个 import，一个都不能少</dd></div>
-              <div><dt>防什么</dt><dd>顺手破坏外部接口</dd></div>
-              <div><dt>记录</dt><dd class="gate-stat" data-gate-stat="api">—</dd></div>
-            </dl>
-          </article>
-
-          <article class="gate">
-            <div class="gate-head"><span class="gate-code">diff</span><span class="gate-tag">边界</span></div>
-            <h3>改动不越界</h3>
-            <dl>
-              <div><dt>判什么</dt><dd>文件数、行数在预算内，且没碰禁止路径</dd></div>
-              <div><dt>防什么</dt><dd>大面积重写，以及改测试代替改代码</dd></div>
-              <div><dt>记录</dt><dd class="gate-stat" data-gate-stat="diff">—</dd></div>
-            </dl>
-          </article>
+    <section class="band" id="tasks">
+      <div class="wrap band-grid">
+        <p class="clause"><span>第 2 条</span>任务</p>
+        <div class="band-body">
+          <div class="band-head">
+            <h2>任务与契约</h2>
+            <a class="link-more" href="#/tasks">全部任务</a>
+          </div>
+          <p class="lead">每个任务带一份 <span class="mono">contract.yaml</span>：验收命令、冻结符号、diff 预算、禁止路径都在里面。下面这些字段从 <span class="mono">tasks/*/task.json</span> 直接读，不是手写的。</p>
+          <div class="tasks" id="tasks-list"></div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="band" id="records">
-    <div class="wrap band-grid">
-      <p class="clause"><span>第 4 条</span>记录</p>
-      <div class="band-body">
-        <h2>每一次运行，都可追溯</h2>
-        <p class="lead">一行审计事件就是一次调用或一次判定，按 <span class="mono">run_id</span> 聚合成一次运行。失败的运行也留在表里——那是数据，不是错误。</p>
+    <section class="band" id="gates">
+      <div class="wrap band-grid">
+        <p class="clause"><span>第 3 条</span>闸门</p>
+        <div class="band-body">
+          <h2>四个闸门，只回答“过没过”</h2>
+          <p class="lead">闸门不解释、不建议、不参与讨论，只输出一个布尔值和一组指标，直接落进审计日志。<span class="mono">all_green</span> 是唯一判定，页面不自己算。</p>
 
-        <div class="table-scroll">
-          <table class="runs">
-            <caption class="sr-only">按时间倒序的交付运行记录</caption>
-            <thead>
-              <tr>
-                <th scope="col">时间</th>
-                <th scope="col">任务</th>
-                <th scope="col">模型</th>
-                <th scope="col">协议 / 后端</th>
-                <th scope="col">闸门</th>
-                <th scope="col">结果</th>
-                <th scope="col" class="num">token</th>
-                <th scope="col" class="num">耗时</th>
-              </tr>
-            </thead>
-            <tbody id="runs-body">
-              <tr><td colspan="8" class="table-empty">正在读取数据…</td></tr>
-            </tbody>
-          </table>
+          <div class="gates">
+            <article class="gate">
+              <div class="gate-head"><span class="gate-code">tests</span><span class="gate-tag">功能</span></div>
+              <h3>验收命令全绿</h3>
+              <dl>
+                <div><dt>判什么</dt><dd>契约里每条验收命令的退出码全部为 0</dd></div>
+                <div><dt>防什么</dt><dd>功能压根没做对</dd></div>
+                <div><dt>记录</dt><dd class="gate-stat" data-gate-stat="tests">—</dd></div>
+              </dl>
+            </article>
+
+            <article class="gate">
+              <div class="gate-head"><span class="gate-code">lint</span><span class="gate-tag">整洁</span></div>
+              <h3>新增问题不超预算</h3>
+              <dl>
+                <div><dt>判什么</dt><dd>打完补丁的告警数减去补丁前基线 ≤ max_new</dd></div>
+                <div><dt>防什么</dt><dd>越改越乱</dd></div>
+                <div><dt>记录</dt><dd class="gate-stat" data-gate-stat="lint">—</dd></div>
+              </dl>
+            </article>
+
+            <article class="gate">
+              <div class="gate-head"><span class="gate-code">api</span><span class="gate-tag">接口</span></div>
+              <h3>冻结的符号还在</h3>
+              <dl>
+                <div><dt>判什么</dt><dd>契约冻结的公开符号逐个 import，一个都不能少</dd></div>
+                <div><dt>防什么</dt><dd>顺手破坏外部接口</dd></div>
+                <div><dt>记录</dt><dd class="gate-stat" data-gate-stat="api">—</dd></div>
+              </dl>
+            </article>
+
+            <article class="gate">
+              <div class="gate-head"><span class="gate-code">diff</span><span class="gate-tag">边界</span></div>
+              <h3>改动不越界</h3>
+              <dl>
+                <div><dt>判什么</dt><dd>文件数、行数在预算内，且没碰禁止路径</dd></div>
+                <div><dt>防什么</dt><dd>大面积重写，以及改测试代替改代码</dd></div>
+                <div><dt>记录</dt><dd class="gate-stat" data-gate-stat="diff">—</dd></div>
+              </dl>
+            </article>
+          </div>
         </div>
+      </div>
+    </section>
 
-        <div class="runs-foot">
+    <section class="band" id="records">
+      <div class="wrap band-grid">
+        <p class="clause"><span>第 4 条</span>记录</p>
+        <div class="band-body">
+          <div class="band-head">
+            <h2>每一次运行，都可追溯</h2>
+            <a class="link-more" href="#/runs">全部运行</a>
+          </div>
+          <p class="lead">一行审计事件就是一次调用或一次判定，按 <span class="mono">run_id</span> 聚合成一次运行。失败的运行也留在表里——那是数据，不是错误。</p>
+
+          <div class="table-scroll">
+            <table class="runs">
+              <caption class="sr-only">最近 8 次交付运行</caption>
+              <thead>
+                <tr>
+                  <th scope="col">时间</th>
+                  <th scope="col">任务</th>
+                  <th scope="col">模型</th>
+                  <th scope="col">协议 / 后端</th>
+                  <th scope="col">闸门</th>
+                  <th scope="col">结果</th>
+                  <th scope="col" class="num">token</th>
+                  <th scope="col" class="num">耗时</th>
+                </tr>
+              </thead>
+              <tbody id="runs-body">
+                <tr><td colspan="8" class="table-empty">正在读取数据…</td></tr>
+              </tbody>
+            </table>
+          </div>
+
           <p class="runs-note" id="runs-note">—</p>
-          <button class="btn btn-ghost btn-small" id="runs-more" type="button" hidden>展开全部</button>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+  </div>
+
+  <div id="app" data-view="app" hidden></div>
 
 </main>
 
