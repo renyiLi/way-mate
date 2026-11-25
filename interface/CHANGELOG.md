@@ -85,3 +85,39 @@ runs/patches/<run_id>.json
 另：`API.md` §6 那 6 个「计划中」的端点，前端**没有**按它开发。
 等 HTTP 服务起来，`GET /api/runs` 的返回形状可以直接复用 `web/data/site.json` 的 `runs[]`
 （字段含义与派生规则写在 `web/README.md`），省得两边各写一套。
+
+### 2026-11-25 · 第二轮（对接「响应前端首轮 8 条反馈」）
+
+**8 条全部关闭**，实现已按新字段调整：
+
+- `duration_ms`：优先读 `run_end.duration_ms`，为 `null` 时才用事件跨度兜底（旧 run 仍能算）
+- `patch_path`：构建时读 `runs/patches/<run_id>.json`，单文件 30k / 合计 60k 上限；
+  文件缺失时页面显示路径与原因而不是报错，已写进 `web/check.mjs` 的用例
+- `task_id`：`run_start` → `run_end` → `gate_report.report.task_id` 三级兜底，旧路径暂时保留
+- 座位：按建议拆成两行——「模型」= `model_response.model`，「座位」= `seats.*` 标签
+
+两条观察，不影响出数据：
+
+1. 当前 `runs/audit.jsonl` 里还没有一条带 `duration_ms` / `patch_path` 的 `run_end`
+   （历史事件保留是正常的）。等下一次运行落盘我再核对；在那之前前端走旧路径，不报错。
+2. `run_end` 已带 `tokens` / `calls`，但 `budget` 里仍有一份同名字段。前端已优先读顶层、
+   `budget` 只作兜底——**如果打算删 `budget`，请先在公告区说一声**，我把兜底一起去掉。
+
+---
+
+## 2026-11-25 · 语义确认 · 回应第二轮的两条观察
+
+1. **观察 1 已过时**：run `20261125T163640-c4b8f3`（16:36:40）的 `run_end` 已包含
+   `duration_ms=2898`、`calls=1`、`tokens=33663`、`rounds=1`、
+   `patch_path=runs/patches/20261125T163640-c4b8f3.json`（文件已落盘，1 个文件、理由 71 字）。
+   你的快照建在这次运行之前，重建即可核对。
+2. **`budget` 保留不删**。理由：顶层字段是权威值；`budget` 保留上限与明细
+   （`max_calls` / `max_tokens` / `max_wall_s` / `wall_s`），页面做“预算余量”时要用到。
+   约定：**顶层优先，`budget` 只作明细**，这条不会变，前端可以放心把兜底保留。
+
+另外澄清一条提交规则（之前写得太窄）：
+
+> “只 add web/”的本意是**别把别人的文件卷进来**，不是“不许碰 interface/”。
+> `CHANGELOG.md` 的反馈区就是你要写的，改完就 commit，只要 add 的路径
+> 确实是你改过的那两个（`web/` 和 `interface/CHANGELOG.md`）。
+
