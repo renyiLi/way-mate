@@ -166,6 +166,28 @@ loop:
   on_exhausted: escalate_to_human
 ```
 
+## 演示外壳（web/）
+
+`web/` 是一张能盖章的"验收单"：把主张、任务与契约、四类闸门、运行记录摆在同一个版面上。
+零构建、零 JS 依赖、字体自托管，`file://` 双击也能看。
+
+![演示外壳](web/preview/desktop.png)
+
+```powershell
+python web/build-data.py          # 读 tasks/ 与 runs/audit.jsonl，生成 web/data/site.{json,js}
+python web/tools/serve_web.py     # 起本地预览并自动开浏览器（自动找空闲端口）
+node web/check.mjs                # 回归：起 headless Chrome 跑一组真实交互断言
+```
+
+- 设计规范：[web/DESIGN.md](web/DESIGN.md) —— 色板、字体、版式、动效档位、Don'ts 都在里面
+- 活样式表：[web/style.html](web/style.html) —— 同一份 `styles.css` 渲染出颜色、字号、组件各状态
+- 四个视图，hash 路由，`file://` 也能走完：`#/` 概览 · `#/tasks` 任务 · `#/tasks/<id>` 任务详情 · `#/runs` 运行列表（可按结果筛选）· `#/runs/<id>` 运行详情（闸门逐项 + 事件时间线）
+- 首屏判定板会回放**最近一次真实运行**的闸门判定，点「回放」可重放
+- 页面数据由 [`web/build-data.py`](web/build-data.py) 在构建期生成，来源是 `tasks/*/task.json` 与 `runs/audit.jsonl`（方案 B）
+
+外壳只负责"看"，不参与判定：页面不发任何请求，也不自己算"是否可交付"——只读 `all_green`。
+要让壳显示真实运行结果，应当由脚本把 `GateReport` 导出成 JSON 再替换常量，而不是在页面里重算一遍规则。
+
 ## 目录
 
 ```
@@ -180,6 +202,9 @@ src/dbw/
     machine.py           P2 协议机
 fixtures/repo_a/         示例仓库（带 bug 与契约）
 scripts/demo_gate.py     闸门端到端演示
+web/                     演示外壳（静态页 + 构建期数据 + 自托管字体）
+web/tools/serve_web.py   预览用静态服务器
+web/check.mjs            外壳回归脚本（CDP 驱动 headless Chrome）
 docs/                    开题报告 / 排期 / 接口协议
 runs/audit.jsonl         运行审计（不入库）
 ```
