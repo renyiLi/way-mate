@@ -139,7 +139,7 @@ def main() -> int:
     print(f"工作区  {info['workspace']}")
     print(f"校验    {'通过（旧源码上确实失败）' if info['verified'] else '未通过'}")
     print(f"下一步  python scripts/run_once.py 需要指向 {info['workspace']}/contract.yaml")
-    return 0 if info["verified"] else 1
+    return 0 if info["verified"] or args.no_verify else 1
 
 
 if __name__ == "__main__":
