@@ -287,7 +287,7 @@ class ProtocolRunner:
     def _propose(self, attempt: int) -> tuple[Any, int]:
         schema = self.spec.propose_schema()
         system = self.spec.system_prompt(self.contract)
-        base_prompt = self._propose_prompt()
+        base_prompt = self._propose_prompt(attempt)
 
         # 成长接口的唯一注入点：没有实现时返回空串，行为不变
         if self.memory is not None:
@@ -318,7 +318,7 @@ class ProtocolRunner:
 
     def _review(self, deliverable: Any) -> ReviewOutcome:
         prompt = (
-            f"{self._task_block()}\n\n"
+            f"{self._task_block(compact=True)}\n\n"
             f"待复核的交付物：\n{self.spec.critique_context(deliverable)}\n\n"
             "请逐条列出对契约的违反。"
         )
@@ -427,12 +427,20 @@ class ProtocolRunner:
 
     # ------------------------------------------------------------ 工具
 
-    def _task_block(self) -> str:
-        return json.dumps(self.task, ensure_ascii=False, indent=2)
+    # 体积大的任务字段：只在第一轮交底，后续轮次不重复发
+    HEAVY_TASK_KEYS = ("current_file",)
 
-    def _propose_prompt(self) -> str:
-        # 与实际交付共用同一个构造点，否则实验对比会混入提示词变量
-        return render_propose_prompt(self.task, self.contract)
+    def _task_block(self, *, compact: bool = False) -> str:
+        task = self._compact_task() if compact else self.task
+        return json.dumps(task, ensure_ascii=False, indent=2)
+
+    def _compact_task(self) -> dict[str, Any]:
+        return {key: value for key, value in self.task.items() if key not in self.HEAVY_TASK_KEYS}
+
+    def _propose_prompt(self, attempt: int = 1) -> str:
+        # 第一轮与单轮交付保持逐字一致（同一个构造点）；后续轮次不再重发整份文件
+        task = self.task if attempt <= 1 else self._compact_task()
+        return render_propose_prompt(task, self.contract)
 
     def _describe(self, deliverable: Any) -> dict[str, Any]:
         if hasattr(deliverable, "to_dict"):

@@ -148,6 +148,8 @@ def main() -> int:
             f"阻断 {record.blockers_after_arbitration} · 闸门 {green}"
             + (f"（{', '.join(failed)}）" if failed else "")
         )
+        for reason in record.dropped[:3]:
+            print(f"      丢弃：{reason}")
 
     print("\n" + "═" * 78)
     print(f"结果   {run.outcome.value} —— {run.reason}")

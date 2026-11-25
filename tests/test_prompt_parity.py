@@ -49,3 +49,23 @@ def test_runner_sends_the_shared_prompt():
     assert sent == render_propose_prompt(TASK, CONTRACT), (
         "协议机发出的提案提示必须与单轮后端完全一致，否则实验不可比"
     )
+
+
+def test_second_round_drops_heavy_context():
+    """第二轮不再重发整份文件——否则成本会成倍涨。"""
+    big = "x" * 4000
+    task = {**TASK, "current_file": big}
+    proposer = ScriptedAdapter("deepseek", [PATCH])
+    run = execute(
+        interface="authoring",
+        task=task,
+        seats=SeatAssignment("deepseek", "kimi"),
+        registry=registry(deepseek=proposer, kimi=ScriptedAdapter("kimi", [{"findings": []}])),
+        evaluate=lambda patch, outcome: gate(False),
+        contract=CONTRACT,
+        max_repair_rounds=1,
+    )
+
+    assert len(run.rounds) == 2
+    assert big in proposer.calls[0].messages[-1].content, "第一轮必须给出完整文件"
+    assert big not in proposer.calls[1].messages[-1].content, "第二轮不应再发整份文件"
