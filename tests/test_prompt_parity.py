@@ -51,8 +51,12 @@ def test_runner_sends_the_shared_prompt():
     )
 
 
-def test_second_round_drops_heavy_context():
-    """第二轮不再重发整份文件——否则成本会成倍涨。"""
+def test_second_round_keeps_full_context():
+    """第二轮仍要发整份文件：SEARCH/REPLACE 要求原文逐字一致。
+
+    曾试过省 token 抽掉 current_file，结果第二轮开始猜片段，
+    在 5000 行的 more.py 上三次全败（实验 11/25/12）。
+    """
     big = "x" * 4000
     task = {**TASK, "current_file": big}
     proposer = ScriptedAdapter("deepseek", [PATCH])
@@ -68,4 +72,4 @@ def test_second_round_drops_heavy_context():
 
     assert len(run.rounds) == 2
     assert big in proposer.calls[0].messages[-1].content, "第一轮必须给出完整文件"
-    assert big not in proposer.calls[1].messages[-1].content, "第二轮不应再发整份文件"
+    assert big in proposer.calls[1].messages[-1].content, "第二轮也必须给出，否则模型会猜片段"

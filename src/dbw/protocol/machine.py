@@ -451,9 +451,10 @@ class ProtocolRunner:
         return {key: value for key, value in self.task.items() if key not in self.HEAVY_TASK_KEYS}
 
     def _propose_prompt(self, attempt: int = 1) -> str:
-        # 第一轮与单轮交付保持逐字一致（同一个构造点）；后续轮次不再重发整份文件
-        task = self.task if attempt <= 1 else self._compact_task()
-        return render_propose_prompt(task, self.contract)
+        # 每轮都给完整任务：SEARCH/REPLACE 要求原文逐字一致，
+        # 抽掉 current_file 会让第二轮猜片段（实测在 more.py 上三次全败）。
+        # 省 token 的裁量留给复核提示（见 _task_block(compact=True)）。
+        return render_propose_prompt(self.task, self.contract)
 
     def _describe(self, deliverable: Any) -> dict[str, Any]:
         if hasattr(deliverable, "to_dict"):
