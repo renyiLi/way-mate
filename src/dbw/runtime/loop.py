@@ -25,12 +25,14 @@ from .base import (
     STOP_WALL_TIME,
 )
 from .local_env import SUBMIT_SENTINEL, LocalEnvironment, Observation
+from ..edit_format import Edit, EditError, apply_edits_to_workspace, parse_markers
 
 # 认两种块：bash 执行、write:<path> 写文件。
 # 原项目只靠 bash heredoc 改文件，那在 Windows 的 cmd 下不成立，
 # 模型会陷入"只能读、没法写"的死循环。
 _FENCE = re.compile(r"```([A-Za-z0-9_.\-/\\:]*)[ \t]*\r?\n(.*?)```", re.DOTALL)
 _WRITE_PREFIX = "write:"
+_EDIT_PREFIX = "edit:"
 _BASH_TAGS = {"", "bash", "sh", "shell", "cmd", "powershell", "ps1"}
 
 SYSTEM_TEMPLATE = """你是一个在代码仓库里工作的执行代理。
@@ -48,7 +50,15 @@ pytest -q
 
 规则：
 - 每次只输出**一个**代码块，不要输出解释文字；
-- 修改文件只能用上面的 write 块，不要用 sed / heredoc / python -c 改文件；
+- 改已有文件优先用 edit 块，只给要替换的那几行：
+```edit:相对路径/文件名.py
+<<<<<<< SEARCH
+（原文，逐字存在且唯一）
+=======
+（替换成什么）
+>>>>>>> REPLACE
+```
+- 新建文件或整份重写才用 write 块；不要用 sed / heredoc / python -c 改文件；
 - 命令在仓库根目录执行，你会看到输出与退出码；
 - 任务完成时执行：echo {sentinel}
 - 不要修改禁止改动的路径：{forbid}
@@ -95,6 +105,11 @@ def parse_action(text: str) -> Action | None:
             target = tag[len(_WRITE_PREFIX):].strip()
             if target:
                 return Action(kind="write", body=body, target=target)
+            continue
+        if lowered.startswith(_EDIT_PREFIX):
+            target = tag[len(_EDIT_PREFIX):].strip()
+            if target:
+                return Action(kind="edit", body=body, target=target)
             continue
         if lowered in _BASH_TAGS:
             command = body.strip()
@@ -197,6 +212,10 @@ class ExecutionLoop:
                 observation = self._write(action)
                 label = f"write:{action.target}"
                 self._readonly_streak = 0
+            elif action.kind == "edit":
+                observation = self._edit(action)
+                label = f"edit:{action.target}"
+                self._readonly_streak = 0
             else:
                 observation = self.env.execute(action.body)
                 label = action.body
@@ -231,6 +250,17 @@ class ExecutionLoop:
                     )
                 )
                 self._readonly_streak = 0
+
+    def _edit(self, action: Action) -> Observation:
+        try:
+            search, replace = parse_markers(action.body)
+        except EditError as exc:
+            return Observation(output=f"edit 块格式不对：{exc}", returncode=1)
+
+        result = apply_edits_to_workspace(self.env.workspace, [Edit(action.target, search, replace)])
+        if result.failures:
+            return Observation(output="；".join(result.failures), returncode=1)
+        return Observation(output=f"已修改 {action.target}（1 处）", returncode=0)
 
     def _write(self, action: Action) -> Observation:
         workspace = self.env.workspace.resolve()

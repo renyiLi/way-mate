@@ -20,6 +20,7 @@ from typing import Any
 
 from ..contract import Contract
 from ..exact import render_exact_block
+from ..edit_format import Edit, compute_edits
 from ..gates import GateReport, GateResult
 from .base import PayloadError
 
@@ -281,6 +282,43 @@ def apply_verdicts(findings: tuple[Finding, ...], payload: Any) -> tuple[tuple[F
 
 # ---------------------------------------------------------------- 写作接口
 
+def _patch_from_edits(payload_edits: Any, payload: dict[str, Any], contract: Contract) -> Patch:
+    """把 SEARCH/REPLACE 编辑合成为完整文件内容。
+
+    Patch 仍然是"整份文件内容"，所以闸门、复核、审计都不用改——
+    变的只是模型怎么表达改动。
+    """
+    if not isinstance(payload_edits, list) or not payload_edits:
+        raise InvalidOutput("edits 必须是非空数组")
+
+    edits: list[Edit] = []
+    for index, item in enumerate(payload_edits):
+        if not isinstance(item, dict):
+            raise InvalidOutput(f"edits[{index}] 必须是对象")
+        path = str(item.get("path", "")).strip()
+        search = item.get("search")
+        replace = item.get("replace")
+        if not path or not isinstance(search, str) or not isinstance(replace, str):
+            raise InvalidOutput(f"edits[{index}] 需要 path / search / replace 三个字符串")
+        if path.startswith("/") or ".." in path.split("/"):
+            raise InvalidOutput(f"只允许仓库内相对路径：{path!r}")
+        for rule in contract.diff.forbid:
+            if rule in path:
+                raise InvalidOutput(f"提案触碰禁止修改的路径 {path}（规则 {rule}）")
+        edits.append(Edit(path=path, search=search, replace=replace))
+
+    result = compute_edits(contract.repo, edits)
+    if result.failures:
+        raise InvalidOutput("；".join(result.failures))
+    if len(result.changed) > contract.diff.max_files:
+        raise InvalidOutput(f"改动 {len(result.changed)} 个文件，超过契约上限 {contract.diff.max_files}")
+
+    rationale = payload.get("rationale")
+    if not isinstance(rationale, str) or not rationale.strip():
+        raise InvalidOutput("rationale 不能为空：说不出为什么改，就不该改")
+    return Patch(files=dict(result.changed), rationale=rationale.strip())
+
+
 class AuthoringInterface:
     """写作接口：只产出补丁，不产出散文。"""
 
@@ -291,9 +329,11 @@ class AuthoringInterface:
         base = (
             "你是一名实现工程师，目标是用最小改动让契约通过。\n"
             "你只输出一个 JSON 对象，形如 "
-            '{"files": {"相对路径": "该文件的完整新内容"}, "rationale": "为什么这样改"}。\n'
+            '{"edits": [{"path": "相对路径", "search": "文件里逐字存在的原文片段", "replace": "替换后的内容"}], "rationale": "为什么这样改"}。\n'
             "规则：\n"
-            "- files 里给出的是**完整文件内容**，不是补丁片段；\n"
+            "- 改已有文件用 edits，只给要替换的那几行，不要重写整份文件；\n"
+            "- search 片段必须在文件里唯一出现，且尽量短；\n"
+            "- 只有新建文件时才用 files（整份内容）；\n"
             f"- 绝对不要修改这些路径：{', '.join(contract.diff.forbid) or '（无限制）'}；\n"
             f"- 改动预算：最多 {contract.diff.max_files} 个文件 / {contract.diff.max_lines} 行；\n"
             "- 不确定时选择更小的改动；\n"
@@ -306,15 +346,35 @@ class AuthoringInterface:
             "type": "object",
             "properties": {
                 "files": {"type": "object", "additionalProperties": {"type": "string"}},
+                "edits": {
+                    "type": "array",
+                    "description": (
+                        "推荐：用 SEARCH/REPLACE 片段描述改动，不要重写整份文件。"
+                        "每项 {path, search, replace}；search 必须是文件里逐字存在且唯一的一小段，"
+                        "replace 是替换后的内容。修改已有文件时优先用它。"
+                    ),
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "path": {"type": "string"},
+                            "search": {"type": "string"},
+                            "replace": {"type": "string"},
+                        },
+                        "required": ["path", "search", "replace"],
+                        "additionalProperties": False,
+                    },
+                },
                 "rationale": {"type": "string"},
             },
-            "required": ["files", "rationale"],
+            "required": ["rationale"],
             "additionalProperties": False,
         }
 
     def parse_proposal(self, payload: Any, contract: Contract) -> Patch:
         if not isinstance(payload, dict):
             raise InvalidOutput("提案必须是 JSON 对象")
+        if payload.get("edits") is not None:
+            return _patch_from_edits(payload["edits"], payload, contract)
         files = payload.get("files")
         rationale = payload.get("rationale")
         if not isinstance(files, dict) or not files:

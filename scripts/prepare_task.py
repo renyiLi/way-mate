@@ -59,11 +59,14 @@ def prepare(task_dir: Path, out: Path, python: str, verify: bool) -> dict:
         raise SystemExit(f"克隆失败：{proc.stderr.strip()[:400]}")
 
     print(f"  切到基线 {base[:10]}")
-    git(out, "checkout", "--quiet", base)
+    # 关掉行尾转换：补丁是按 LF 生成的，工作区若被转成 CRLF，git apply 会失败
+    git(out, "config", "core.autocrlf", "false")
+    git(out, "checkout", "--force", "--quiet", base)
 
     patch = (task_dir / recipe["test_patch"]).read_text(encoding="utf-8")
     patch_file = out / ".task-test.patch"
-    patch_file.write_text(patch, encoding="utf-8")
+    # 必须二进制写入：write_text 会把 \n 翻译成 CRLF，补丁一带 CRLF 就对不上
+    patch_file.write_bytes(patch.encode("utf-8"))
     applied = git(out, "apply", "--whitespace=nowarn", str(patch_file), check=False)
     patch_file.unlink(missing_ok=True)
     if applied.returncode != 0:
@@ -106,7 +109,9 @@ def prepare(task_dir: Path, out: Path, python: str, verify: bool) -> dict:
         print(f"    {mark}：{tail[0]}")
         _ = contract
 
-    (out / "prepared.json").write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8")
+    # 写在任务目录旁边，不要写进工作区：否则会被 diff 闸门算成一个改动文件
+    meta = out.parent / f"{recipe['id']}.prepared.json"
+    meta.write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8")
     return info
 
 

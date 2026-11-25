@@ -67,7 +67,7 @@ def main() -> int:
         base_url=settings.get(profile.base_env, profile.default_base) or profile.default_base,
         capabilities=capabilities,
         issue=issue,
-        target_file="",
+        target_file=(recipe.get("target_files") or [""])[0],
         strip_exact=args.strip_exact,
         prepare=prepare,
     )

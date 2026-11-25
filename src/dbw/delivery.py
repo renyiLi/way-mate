@@ -100,7 +100,8 @@ def apply_patch(repo: Path, patch: Patch) -> None:
     for relative, content in patch.files.items():
         target = repo / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
+        # 必须二进制写：write_text 会把 \n 翻成 CRLF，整份文件就“全变了”
+        target.write_bytes(content.encode("utf-8"))
 
 
 def reset_workspace(repo: Path) -> None:
