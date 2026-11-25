@@ -21,7 +21,7 @@ from .audit import AuditLog, git_sha
 from .contract import Contract, load_contract
 from .gates import GateReport, lint_baseline, run_all
 from .protocol.base import Capabilities, Message, ModelRequest, extract_json
-from .protocol.interfaces import AuthoringInterface, Patch
+from .protocol.interfaces import AuthoringInterface, Patch, render_propose_prompt
 
 
 @dataclass
@@ -227,7 +227,7 @@ def deliver_once(
     )
 
     system_prompt = interface.system_prompt(contract)
-    user_prompt = json.dumps(task, ensure_ascii=False, indent=2)
+    user_prompt = render_propose_prompt(task, contract)
     schema = interface.propose_schema()
 
     response = None
@@ -283,9 +283,8 @@ def deliver_once(
             # 这必须报出来，否则会被误判成"提案不合法"。
             empty = not response.text.strip()
             hint = "（你的上一条回复没有正文，可能是推理过长）" if empty else ""
-            user_prompt = (
-                json.dumps(task, ensure_ascii=False, indent=2)
-                + f"\n\n注意：你上一次的输出不合法{hint}（{exc}）。请直接输出符合要求的 JSON，不要任何其他文字。"
+            user_prompt = render_propose_prompt(task, contract) + (
+                f"\n\n注意：你上一次的输出不合法{hint}（{exc}）。请直接输出符合要求的 JSON，不要任何其他文字。"
             )
 
     if patch is None:

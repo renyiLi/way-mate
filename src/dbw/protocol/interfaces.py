@@ -319,6 +319,17 @@ def _patch_from_edits(payload_edits: Any, payload: dict[str, Any], contract: Con
     return Patch(files=dict(result.changed), rationale=rationale.strip())
 
 
+def render_propose_prompt(task: dict[str, Any], contract: Contract) -> str:
+    """提案提示词的**唯一**构造点。
+
+    单轮后端（delivery）与协议机（machine）都调它。
+    两边各自拼提示词会导致“单轮 vs 2 人协议”的对比混入提示词变量，实验直接失效。
+    """
+    task_block = json.dumps(task, ensure_ascii=False, indent=2)
+    dod_block = json.dumps(contract.to_dict()["doD"], ensure_ascii=False, indent=2)
+    return f"任务：\n{task_block}\n\n验收契约：\n{dod_block}\n\n请给出你的产出。"
+
+
 class AuthoringInterface:
     """写作接口：只产出补丁，不产出散文。"""
 

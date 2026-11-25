@@ -45,6 +45,7 @@ from .interfaces import (
     ReviewOutcome,
     apply_verdicts,
     get_interface,
+    render_propose_prompt,
 )
 
 Evaluator = Callable[[Any, ReviewOutcome], GateReport]
@@ -421,11 +422,8 @@ class ProtocolRunner:
         return json.dumps(self.task, ensure_ascii=False, indent=2)
 
     def _propose_prompt(self) -> str:
-        return (
-            f"任务：\n{self._task_block()}\n\n"
-            f"验收契约：\n{json.dumps(self.contract.to_dict()['doD'], ensure_ascii=False, indent=2)}\n\n"
-            "请给出你的产出。"
-        )
+        # 与实际交付共用同一个构造点，否则实验对比会混入提示词变量
+        return render_propose_prompt(self.task, self.contract)
 
     def _describe(self, deliverable: Any) -> dict[str, Any]:
         if hasattr(deliverable, "to_dict"):
