@@ -10,13 +10,25 @@
     "tests/test_more.py::NumericRangeTests::test_len_matches_iteration"
   ],
   "test_patch": "test_patch.diff",
-  "target_files": ["more_itertools/more.py"],
-  "forbidden": ["tests/"],
-  "tier": "hard",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "medium",
   "solution_note": "上游改了 4 处（__contains__、__len__、__getitem__ 与内部长度缓存），共 38 增 / 18 删；statement 只描述两个方法的结果与迭代不一致。",
   "verified": {
     "red_without_fix": "2 failed, 592 passed, 11179 subtests passed",
     "green_with_fix": "594 passed, 11179 subtests passed",
     "fix_size": "38 行新增 / 18 行删除，涉及 4 处"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 2,
+    "reps": 3,
+    "backend": "direct"
   }
 }

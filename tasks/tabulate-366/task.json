@@ -8,13 +8,25 @@
   "statement": "使用 tabulate 渲染 github 格式的表格时，如果单元格内容含换行（多行文本），输出是错的：换行没有被当作多行处理，整行被糊在一起，列宽也不对。同样的数据换成 fancy_outline 格式渲染就是正常的。请修复 github 格式的多行处理。",
   "target_test": "test/test_output.py::test_github_multiline",
   "test_patch": "test_patch.diff",
-  "target_files": ["tabulate/__init__.py"],
-  "forbidden": ["test/"],
+  "target_files": [
+    "tabulate/__init__.py"
+  ],
+  "forbidden": [
+    "test/"
+  ],
   "tier": "easy",
   "solution_note": "上游 PR 正文写了修法（在 multiline_formats 里加一项），因此 statement 只保留症状，不得引用 PR 正文。",
   "verified": {
     "red_without_fix": "1 failed, 175 passed, 21 skipped",
     "green_with_fix": "176 passed, 21 skipped",
     "fix_size": "1 行"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 3,
+    "reps": 3,
+    "backend": "direct"
   }
 }

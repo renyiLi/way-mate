@@ -17,7 +17,7 @@ doD:
 
   diff:
     max_files: 3
-    max_lines: 80
+    max_lines: 120
     forbid:
       - tests/
 

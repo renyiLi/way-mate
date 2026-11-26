@@ -15,10 +15,18 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "medium",
+  "tier": "hard",
   "solution_note": "上游把 peek 的实现改成不依赖缓存（9 行）；statement 只描述内存增长。",
   "verified": {
     "red_without_fix": "1 failed, 765 passed, 21202 subtests passed",
     "green_with_fix": "766 passed, 21202 subtests passed"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 0,
+    "reps": 3,
+    "backend": "direct"
   }
 }

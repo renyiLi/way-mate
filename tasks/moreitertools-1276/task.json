@@ -16,10 +16,18 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "hard",
+  "tier": "medium",
   "solution_note": "上游改了 13 行，让反向迭代复用正向的取值；statement 只描述精度漂移。",
   "verified": {
     "red_without_fix": "5 failed, 751 passed, 21169 subtests passed",
     "green_with_fix": "756 passed, 21169 subtests passed"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 2,
+    "reps": 3,
+    "backend": "direct"
   }
 }

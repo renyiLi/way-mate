@@ -15,10 +15,18 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "easy",
+  "tier": "hard",
   "solution_note": "上游改 4 行，把参数探测与迭代分开；statement 只描述误吞。",
   "verified": {
     "red_without_fix": "1 failed, 741 passed",
     "green_with_fix": "742 passed, 21049 subtests passed"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 0,
+    "reps": 3,
+    "backend": "direct"
   }
 }

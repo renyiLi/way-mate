@@ -12,13 +12,25 @@
     "test/test_output.py::test_github_with_colalign"
   ],
   "test_patch": "test_patch.diff",
-  "target_files": ["tabulate/__init__.py"],
-  "forbidden": ["test/"],
-  "tier": "hard",
+  "target_files": [
+    "tabulate/__init__.py"
+  ],
+  "forbidden": [
+    "test/"
+  ],
+  "tier": "medium",
   "solution_note": "上游修法是把 github 格式改为 pipe 格式的别名（pipe 本就输出对齐冒号）；statement 只描述症状与期望格式，不提示复用 pipe。",
   "verified": {
     "red_without_fix": "4 failed, 176 passed, 21 skipped",
     "green_with_fix": "180 passed, 21 skipped",
     "fix_size": "删除 10 行、新增 4 行"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 2,
+    "reps": 3,
+    "backend": "direct"
   }
 }

@@ -10,13 +10,25 @@
     "test/test_output.py::test_asciidoc_headerless"
   ],
   "test_patch": "test_patch.diff",
-  "target_files": ["tabulate/__init__.py"],
-  "forbidden": ["test/"],
+  "target_files": [
+    "tabulate/__init__.py"
+  ],
+  "forbidden": [
+    "test/"
+  ],
   "tier": "medium",
   "solution_note": "上游修法是把 f\"{width}{align}\" 改成 f\"{align}{width}\"，statement 只说顺序反了，不给具体代码。",
   "verified": {
     "red_without_fix": "2 failed, 176 passed, 21 skipped",
     "green_with_fix": "178 passed, 21 skipped",
     "fix_size": "4 行改动"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 2,
+    "reps": 3,
+    "backend": "direct"
   }
 }

@@ -22,5 +22,13 @@
   "verified": {
     "red_without_fix": "3 failed（子测试）, 743 passed",
     "green_with_fix": "746 passed, 21066 subtests passed"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 2,
+    "reps": 3,
+    "backend": "direct"
   }
 }

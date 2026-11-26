@@ -7,13 +7,25 @@
   "statement": "使用 tabulate 渲染表格并开启按列宽自动换行（maxcolwidths 或 colwidths）时，如果某个单元格的值是布尔值 True/False 或 None，会直接抛出 AttributeError: 'bool' object has no attribute 'splitlines'。这些值应当和其它值一样被当作文本处理，而不是抛异常。",
   "target_test": "test/test_textwrapper.py::test_wrap_optional_bool_strs",
   "test_patch": "test_patch.diff",
-  "target_files": ["tabulate/__init__.py"],
-  "forbidden": ["test/"],
-  "tier": "medium",
+  "target_files": [
+    "tabulate/__init__.py"
+  ],
+  "forbidden": [
+    "test/"
+  ],
+  "tier": "hard",
   "solution_note": "上游修法是简化类型转换（统一 str(cell)），statement 只描述症状，不提示改哪一行。",
   "verified": {
     "red_without_fix": "1 failed, 10 passed, 3 skipped",
     "green_with_fix": "11 passed, 3 skipped",
     "fix_size": "1 行新增 / 7 行删除"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 0,
+    "reps": 3,
+    "backend": "direct"
   }
 }

@@ -5,15 +5,29 @@
   "pull_request": 1311,
   "title": "all_unique 忽略了假值但可调用的 key",
   "statement": "more_itertools.all_unique 支持传入 key 参数来自定义去重依据，但当传入的 key 是一个“假值但可调用”的对象（例如自定义了 __bool__ 返回 False 的 callable）时，它会被当作没有传 key，于是按元素本身去重，结果与不传 key 相同。期望是：只要 key 不是 None，就应该按它计算去重键。",
-  "target_test": ["tests/test_more.py::AllUniqueTests::test_falsey_key_is_honoured"],
+  "target_test": [
+    "tests/test_more.py::AllUniqueTests::test_falsey_key_is_honoured"
+  ],
   "test_patch": "test_patch.diff",
-  "target_files": ["more_itertools/more.py"],
-  "forbidden": ["tests/"],
-  "tier": "hard",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "medium",
   "solution_note": "上游把 `if key` 改成 `if key is None` 的三元表达式；statement 只描述症状（假值 callable 被忽略），不指出是哪一行判断。",
   "verified": {
     "red_without_fix": "1 failed, 626 passed, 11327 subtests passed",
     "green_with_fix": "627 passed, 11327 subtests passed",
     "fix_size": "1 行改写"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 2,
+    "reps": 3,
+    "backend": "direct"
   }
 }

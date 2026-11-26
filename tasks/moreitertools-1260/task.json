@@ -16,10 +16,18 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "medium",
+  "tier": "easy",
   "solution_note": "上游在 recipes.py 加 6 行校验；statement 只描述非法参数未被拒绝。",
   "verified": {
     "red_without_fix": "21 failed（子测试）, 762 passed",
     "green_with_fix": "783 passed, 21182 subtests passed"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 3,
+    "reps": 3,
+    "backend": "direct"
   }
 }

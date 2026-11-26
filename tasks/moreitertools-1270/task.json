@@ -15,10 +15,18 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "easy",
+  "tier": "hard",
   "solution_note": "上游改 4 行；statement 给出期望语义（不限制），但不给实现方式。",
   "verified": {
     "red_without_fix": "4 failed（均为子测试）, 749 passed",
     "green_with_fix": "753 passed, 21165 subtests passed"
+  },
+  "measured": {
+    "date": "2026-11-26",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "passed": 0,
+    "reps": 3,
+    "backend": "direct"
   }
 }

@@ -30,9 +30,12 @@ def list_tasks() -> list[str]:
     return sorted(p.parent.name for p in (ROOT / "tasks").glob("*/task.json"))
 
 
-def prepare(task_id: str, python: str) -> dict:
+def prepare(task_id: str, python: str, mirror: str = "") -> dict:
+    cmd = [python, str(ROOT / "scripts" / "prepare_task.py"), "--task", f"tasks/{task_id}", "--no-verify"]
+    if mirror:
+        cmd.extend(["--mirror", mirror])
     proc = subprocess.run(
-        [python, str(ROOT / "scripts" / "prepare_task.py"), "--task", f"tasks/{task_id}", "--no-verify"],
+        cmd,
         cwd=str(ROOT),
         capture_output=True,
         text=True,
@@ -111,6 +114,7 @@ def main() -> int:
     parser.add_argument("--reps", type=int, default=3)
     parser.add_argument("--backend", default="direct", choices=["direct", "runtime"])
     parser.add_argument("--budget", type=int, default=12, help="runtime 的步数上限")
+    parser.add_argument("--mirror", default="", help="本地克隆目录；网络不可用时用它准备任务")
     args = parser.parse_args()
 
     settings = Settings()
@@ -127,7 +131,7 @@ def main() -> int:
     rows = []
     started = time.perf_counter()
     for task_id in tasks:
-        recipe = prepare(task_id, sys.executable)
+        recipe = prepare(task_id, sys.executable, args.mirror)
         passed = 0
         tokens = 0
         ms = 0
