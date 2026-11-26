@@ -1,0 +1,51 @@
+diff --git a/tests/test_more.py b/tests/test_more.py
+index 03b1206..9ec108d 100644
+--- a/tests/test_more.py
++++ b/tests/test_more.py
+@@ -2644,7 +2644,7 @@ class NumericRangeTests(TestCase):
+             ((0.0,), []),
+             ((1, 0), []),
+             ((1.0, 0.0), []),
+-            ((0.1, 0.30000000000000001, 0.2), [0.1]),  # IEEE 754 !
++            ((0.1, 0.30000000000000001, 0.2), [0.1]),  # IEE 754 !
+             (
+                 (
+                     Decimal("0.1"),
+@@ -2999,7 +2999,7 @@ class NumericRangeTests(TestCase):
+             ((1.0, 7.01, 1.5), 5),
+             ((7.0, 1.0, -1.5), 4),
+             ((7.01, 1.0, -1.5), 5),
+-            ((0.1, 0.30000000000000001, 0.2), 1),  # IEEE 754 !
++            ((0.1, 0.30000000000000001, 0.2), 1),  # IEE 754 !
+             (
+                 (
+                     Decimal("0.1"),
+@@ -5074,6 +5074,28 @@ class ValueChainTests(TestCase):
+         expected = [1, (2, (3,)), 'foo', ['bar', ['baz']], 'tic', 'key', obj]
+         self.assertEqual(actual, expected)
+ 
++    def test_type_error_while_iterating(self):
++        # A TypeError raised while consuming an argument means the argument
++        # is broken, not that it is a scalar - it should propagate.
++        def gen():
++            yield 1
++            yield 2
++            raise TypeError('failure inside the iterable')
++
++        it = mi.value_chain(gen(), 3)
++        self.assertEqual([next(it), next(it)], [1, 2])
++        with self.assertRaises(TypeError):
++            next(it)
++
++    def test_type_error_from_iter(self):
++        # An object that cannot be iterated at all is still emitted as-is.
++        class NotIterable:
++            def __iter__(self):
++                raise TypeError('not iterable')
++
++        obj = NotIterable()
++        self.assertEqual(list(mi.value_chain(1, obj, [2, 3])), [1, obj, 2, 3])
++
+ 
+ class ProductIndexTests(TestCase):
+     def test_basic(self):

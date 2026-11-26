@@ -1,0 +1,25 @@
+{
+  "id": "moreitertools-1260",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "d634820be7a23b6a85441ee67051530fb0a8a960",
+  "pull_request": 1260,
+  "title": "running_* 配方对非整数窗口与非正索引没有正确拒绝",
+  "statement": "more_itertools 的 running_mean / running_min / running_max / running_statistics 等配方，在窗口大小是非整数、或索引是 0 与负数时没有正确报错，会给出错误结果。期望：这类非法参数应当像普通序列索引那样直接抛错。",
+  "target_test": [
+    "tests/test_recipes.py::RunningWindowSizeTests::test_noninteger_window",
+    "tests/test_recipes.py::RunningWindowSizeTests::test_nonpositive_index"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/recipes.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "medium",
+  "solution_note": "上游在 recipes.py 加 6 行校验；statement 只描述非法参数未被拒绝。",
+  "verified": {
+    "red_without_fix": "21 failed（子测试）, 762 passed",
+    "green_with_fix": "783 passed, 21182 subtests passed"
+  }
+}

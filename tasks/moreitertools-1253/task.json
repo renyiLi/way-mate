@@ -1,0 +1,26 @@
+{
+  "id": "moreitertools-1253",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "d92f081a089714e0aa92434c797fdd1a06da1290",
+  "pull_request": 1253,
+  "title": "maxsplit=0 时 split_* 对空输入多产出一个空列表",
+  "statement": "more_itertools.split_before / split_after / split_when 在 maxsplit=0 时，对空集合会多产出一个空列表（应为不切分、直接给出原始结果）。同样的错误也影响它们对空输入的处理。",
+  "target_test": [
+    "tests/test_more.py::SplitBeforeTest::test_empty_collection",
+    "tests/test_more.py::SplitAfterTest::test_empty_collection",
+    "tests/test_more.py::SplitWhenTests::test_empty_iterable"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "medium",
+  "solution_note": "上游改 12 行；statement 只描述结果多一个空列表。",
+  "verified": {
+    "red_without_fix": "3 failed（子测试）, 743 passed",
+    "green_with_fix": "746 passed, 21066 subtests passed"
+  }
+}

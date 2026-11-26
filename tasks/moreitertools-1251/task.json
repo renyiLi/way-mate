@@ -1,0 +1,24 @@
+{
+  "id": "moreitertools-1251",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "a826a4e09e3f2782822c71da6670e9275735ad3e",
+  "pull_request": 1251,
+  "title": "value_chain 吞掉了迭代过程中的 TypeError",
+  "statement": "more_itertools.value_chain 内部会捕获 TypeError 用于判断参数形态，但如果 TypeError 是在**迭代元素时**抛出的，也会被一并吞掉，导致真实错误被掩盖。期望：迭代过程中抛出的异常应原样向上传递。",
+  "target_test": [
+    "tests/test_more.py::ValueChainTests::test_type_error_while_iterating"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "easy",
+  "solution_note": "上游改 4 行，把参数探测与迭代分开；statement 只描述误吞。",
+  "verified": {
+    "red_without_fix": "1 failed, 741 passed",
+    "green_with_fix": "742 passed, 21049 subtests passed"
+  }
+}

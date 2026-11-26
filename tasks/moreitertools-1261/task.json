@@ -1,0 +1,24 @@
+{
+  "id": "moreitertools-1261",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "b656ecc0a64e328549a9858af1c4b609f9922b07",
+  "pull_request": 1261,
+  "title": "combination_with_replacement_index 把 None 当成了缺失参数",
+  "statement": "more_itertools.combination_with_replacement_index 在序列里含 None 时会给出错误的组合：它把 None 当成了“参数没传”的标记，于是返回的索引指向别的元素。期望：任何真实元素（包括 None）都应被当作普通值处理。",
+  "target_test": [
+    "tests/test_more.py::CombinationWithReplacementIndexTests::test_none_values"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "hard",
+  "solution_note": "上游把哨兵改成独立对象（32 行改写）；statement 只描述 None 被误认。",
+  "verified": {
+    "red_without_fix": "14 failed（子测试）, 747 passed",
+    "green_with_fix": "761 passed, 21151 subtests passed"
+  }
+}
