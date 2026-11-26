@@ -1,0 +1,27 @@
+{
+  "id": "moreitertools-1279",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "9ed3dbb0ae527230cd156d91d0af305478558fba",
+  "pull_request": 1279,
+  "title": "one / only 忽略假值自定义异常，且过早求值 repr",
+  "statement": "more_itertools.one 与 only 有两个问题：\n1. 传入自定义 except 参数时，如果该对象是「假值但合法」的异常类，会被当作没传而用默认异常；\n2. 当可迭代对象里多于一个元素时，构造错误消息会去求值元素的 repr，这可能在元素上触发副作用或非常慢。\n期望：只有 except 为 None 时才使用默认异常；构造错误消息时不要提前求值 repr。",
+  "target_test": [
+    "tests/test_more.py::OneTests::test_falsy_custom_exception",
+    "tests/test_more.py::OneTests::test_too_long_does_not_evaluate_repr",
+    "tests/test_more.py::OnlyTests::test_falsy_custom_exception",
+    "tests/test_more.py::OnlyTests::test_too_long_does_not_evaluate_repr"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "hard",
+  "solution_note": "上游改了 14 行，两处问题；statement 只描述症状。",
+  "verified": {
+    "red_without_fix": "4 failed, 749 passed, 21169 subtests passed",
+    "green_with_fix": "753 passed, 21169 subtests passed"
+  }
+}

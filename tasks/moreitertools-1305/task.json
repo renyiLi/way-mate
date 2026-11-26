@@ -1,0 +1,25 @@
+{
+  "id": "moreitertools-1305",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "790bb0bb2c03e7a07282e5f16f4b1fde35b8fcf5",
+  "pull_request": 1305,
+  "title": "ichunked 对 n=0 与负数的处理与 chunked 不一致",
+  "statement": "more_itertools.ichunked 在块大小 n 为 0 或负数时的行为与同族的 chunked 不一致：chunked 对 n<0 抛 ValueError、对 n=0 产出空，而 ichunked 会直接崩或给出不同结果。请让 ichunked 的入参校验与 chunked 保持一致。",
+  "target_test": [
+    "tests/test_more.py::IchunkedTests::test_negative",
+    "tests/test_more.py::IchunkedTests::test_zero_nonempty"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "easy",
+  "solution_note": "上游在函数入口加校验（5 行）；statement 只说与 chunked 不一致。",
+  "verified": {
+    "red_without_fix": "2 failed, 765 passed, 21202 subtests passed",
+    "green_with_fix": "767 passed, 21202 subtests passed"
+  }
+}

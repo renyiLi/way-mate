@@ -1,0 +1,25 @@
+{
+  "id": "moreitertools-1322",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "4aeb4338ae1407d8da9723e86da99efeb446f719",
+  "pull_request": 1322,
+  "title": "peekable 的负步长切片与普通切片不一致",
+  "statement": "more_itertools.peekable 支持切片，但当步长为负数且省略 stop（例如 p[-1::-2]）时，返回的元素与对同一序列做普通切片不一致；另外它的预读缓存会被整体消费掉。期望：peekable 的切片结果与普通序列切片完全一致，且不应为了一个切片把缓存全部读进内存。",
+  "target_test": [
+    "tests/test_more.py::PeekableTests::test_slicing_negative_step_omitted_stop",
+    "tests/test_more.py::PeekableTests::test_slicing_negative_step_omitted_stop_read_bound"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "medium",
+  "solution_note": "上游改了 16 行（_get_slice 走 islice 语义），statement 只描述结果不一致与缓存被吃光。",
+  "verified": {
+    "red_without_fix": "2 failed, 765 passed, 21194 subtests passed",
+    "green_with_fix": "767 passed, 21194 subtests passed"
+  }
+}

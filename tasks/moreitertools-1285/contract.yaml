@@ -1,0 +1,27 @@
+task_id: moreitertools-1285
+repo: .
+
+doD:
+  tests:
+    - cmd: python -m pytest tests/test_more.py::BucketTests::test_getitem_miss_does_not_add_key tests/test_more.py::BucketTests::test_in_does_not_add_key tests/test_more.py::BucketTests::test_in_does_not_add_key_with_validator tests/test_more.py::BucketTests::test_keys_are_only_those_seen -q
+      timeout_s: 180
+
+  lint:
+    tool: ruff
+    max_new: 0
+
+  api:
+    frozen: []
+
+  exact: []
+
+  diff:
+    max_files: 3
+    max_lines: 80
+    forbid:
+      - tests/
+
+loop:
+  repair_rounds: 3
+  stop_on: all_green
+  on_exhausted: escalate_to_human

@@ -1,0 +1,27 @@
+{
+  "id": "moreitertools-1285",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "b2f3aff7633057d234ec9186c18a53f4df306d08",
+  "pull_request": 1285,
+  "title": "查询 bucket 会凭空造出不存在的 key",
+  "statement": "more_itertools.bucket 在只读查询时会改变自身状态：用 `x in b` 判断存在性、或用 `b[key]` 取一个从未出现过的 key，都会把这个 key 加进 keys()；带 validator 时还会错误地创建出 bucket。期望：查询操作不应改变 bucket 里已有的 key 集合。",
+  "target_test": [
+    "tests/test_more.py::BucketTests::test_getitem_miss_does_not_add_key",
+    "tests/test_more.py::BucketTests::test_in_does_not_add_key",
+    "tests/test_more.py::BucketTests::test_in_does_not_add_key_with_validator",
+    "tests/test_more.py::BucketTests::test_keys_are_only_those_seen"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "medium",
+  "solution_note": "上游改了 13 行（__contains__/__getitem__ 不再写缓存）；statement 只描述「查询会造 key」。",
+  "verified": {
+    "red_without_fix": "4 failed, 754 passed, 21173 subtests passed",
+    "green_with_fix": "758 passed, 21173 subtests passed"
+  }
+}
