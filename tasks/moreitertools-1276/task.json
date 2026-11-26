@@ -1,0 +1,25 @@
+{
+  "id": "moreitertools-1276",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "9ed3dbb0ae527230cd156d91d0af305478558fba",
+  "pull_request": 1276,
+  "title": "numeric_range 反向迭代把浮点原值算坏了",
+  "statement": "对 more_itertools.numeric_range 做反向迭代时，拿到的元素不再等于正向迭代里的同一个值：浮点数会因重新计算而漂移（例如 0.1 变成 0.09999999999999998），datetime 的边界值也会出错。期望：反向迭代返回的元素与正向完全相同。",
+  "target_test": [
+    "tests/test_more.py::NumericRangeTests::test_reversed_datetime_limits",
+    "tests/test_more.py::NumericRangeTests::test_reversed_preserves_float_values"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "hard",
+  "solution_note": "上游改了 13 行，让反向迭代复用正向的取值；statement 只描述精度漂移。",
+  "verified": {
+    "red_without_fix": "5 failed, 751 passed, 21169 subtests passed",
+    "green_with_fix": "756 passed, 21169 subtests passed"
+  }
+}

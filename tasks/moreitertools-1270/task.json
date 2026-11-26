@@ -1,0 +1,24 @@
+{
+  "id": "moreitertools-1270",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "19ddb972845ab0e5b9b7449d3fd5930781407441",
+  "pull_request": 1270,
+  "title": "constrained_batches 对非正上限的处理不符合文档",
+  "statement": "more_itertools.constrained_batches 在 max_count 为 0 或负数时的行为与文档不符：按文档这类上限应表示“不限制”，但实际会把结果限制成空或抛错。请让非正上限按“不限制”处理。",
+  "target_test": [
+    "tests/test_more.py::ConstrainedBatchesTests::test_nonpositive_max_count"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "easy",
+  "solution_note": "上游改 4 行；statement 给出期望语义（不限制），但不给实现方式。",
+  "verified": {
+    "red_without_fix": "4 failed（均为子测试）, 749 passed",
+    "green_with_fix": "753 passed, 21165 subtests passed"
+  }
+}

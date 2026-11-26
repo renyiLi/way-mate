@@ -1,0 +1,27 @@
+task_id: moreitertools-1270
+repo: .
+
+doD:
+  tests:
+    - cmd: python -m pytest tests/test_more.py::ConstrainedBatchesTests::test_nonpositive_max_count -q
+      timeout_s: 180
+
+  lint:
+    tool: ruff
+    max_new: 0
+
+  api:
+    frozen: []
+
+  exact: []
+
+  diff:
+    max_files: 3
+    max_lines: 80
+    forbid:
+      - tests/
+
+loop:
+  repair_rounds: 3
+  stop_on: all_green
+  on_exhausted: escalate_to_human

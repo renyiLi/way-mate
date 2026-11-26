@@ -1,0 +1,25 @@
+{
+  "id": "moreitertools-1269",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "ca711220a6657a22655f6fa497524d006a735c5f",
+  "pull_request": 1269,
+  "title": "seekable 在 maxlen=0 时 bool/peek 会吃掉元素",
+  "statement": "more_itertools.seekable 在 maxlen=0（不缓存）时，对它做真假判断（bool）或调用 peek，会把元素消费掉，导致后续迭代少元素。期望：这些只读操作不应消费任何元素。",
+  "target_test": [
+    "tests/test_more.py::SeekableTest::test_maxlen_zero_bool_does_not_drop_items",
+    "tests/test_more.py::SeekableTest::test_maxlen_zero_peek_does_not_drop_items"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "medium",
+  "solution_note": "上游在 bool/peek 前补了恢复逻辑（5 行）；statement 只描述丢元素。",
+  "verified": {
+    "red_without_fix": "2 failed, 747 passed, 21165 subtests passed",
+    "green_with_fix": "749 passed, 21165 subtests passed"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "moreitertools-1294",
+  "repo": "https://github.com/more-itertools/more-itertools",
+  "base_sha": "b5e3886a37209bb880f17d82fbf4ba00ece0e41e",
+  "pull_request": 1294,
+  "title": "seekable 不缓存时反复 peek 仍然无限占内存",
+  "statement": "more_itertools.seekable 在禁用缓存（maxlen=0）时，反复调用 peek 会让内存持续增长：它把已经读过、本不该保留的元素全都存了下来。期望：maxlen=0 时 peek 不应累积任何元素。",
+  "target_test": [
+    "tests/test_more.py::SeekableTest::test_repeated_zero_cache_peek_has_bounded_memory"
+  ],
+  "test_patch": "test_patch.diff",
+  "target_files": [
+    "more_itertools/more.py"
+  ],
+  "forbidden": [
+    "tests/"
+  ],
+  "tier": "medium",
+  "solution_note": "上游把 peek 的实现改成不依赖缓存（9 行）；statement 只描述内存增长。",
+  "verified": {
+    "red_without_fix": "1 failed, 765 passed, 21202 subtests passed",
+    "green_with_fix": "766 passed, 21202 subtests passed"
+  }
+}
