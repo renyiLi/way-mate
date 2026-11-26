@@ -18,7 +18,7 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "medium",
+  "tier": "hard",
   "solution_note": "上游改了 13 行（__contains__/__getitem__ 不再写缓存）；statement 只描述「查询会造 key」。",
   "verified": {
     "red_without_fix": "4 failed, 754 passed, 21173 subtests passed",
@@ -28,8 +28,9 @@
     "date": "2026-11-26",
     "provider": "deepseek",
     "model": "deepseek-chat",
-    "passed": 2,
+    "passed": 0,
     "reps": 3,
-    "backend": "direct"
+    "backend": "direct",
+    "note": "放宽 diff 上限到 120 后重测；失败原因是 lint 新增问题，此前 2/3 是 diff 上限掩盖了它"
   }
 }

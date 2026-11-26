@@ -47,7 +47,9 @@ def prepare(task_id: str, python: str, mirror: str = "") -> dict:
     return json.loads((ROOT / "tasks" / task_id / "task.json").read_text(encoding="utf-8"))
 
 
-def run_direct(recipe: dict, provider: str, model: str, settings: Settings, capabilities) -> DeliveryResult:
+def run_direct(
+    recipe: dict, provider: str, model: str, settings: Settings, capabilities, timeout_s: float = 180.0
+) -> DeliveryResult:
     profile = PROFILES[provider]
     targets = recipe.get("target_files") or [""]
     return deliver_once(
@@ -61,6 +63,7 @@ def run_direct(recipe: dict, provider: str, model: str, settings: Settings, capa
         issue=recipe["statement"],
         target_file=targets[0],
         prepare=False,
+        timeout_s=timeout_s,
     )
 
 
@@ -115,6 +118,7 @@ def main() -> int:
     parser.add_argument("--backend", default="direct", choices=["direct", "runtime"])
     parser.add_argument("--budget", type=int, default=12, help="runtime 的步数上限")
     parser.add_argument("--mirror", default="", help="本地克隆目录；网络不可用时用它准备任务")
+    parser.add_argument("--timeout", type=float, default=180.0, help="单次模型调用超时（秒）")
     args = parser.parse_args()
 
     settings = Settings()
@@ -138,7 +142,7 @@ def main() -> int:
         reasons: set[str] = set()
         for _ in range(reps):
             if args.backend == "direct":
-                r = run_direct(recipe, args.provider, args.model, settings, capabilities)
+                r = run_direct(recipe, args.provider, args.model, settings, capabilities, args.timeout)
                 tokens += r.tokens
                 ms += r.latency_ms
                 ok = r.outcome == "accepted"
