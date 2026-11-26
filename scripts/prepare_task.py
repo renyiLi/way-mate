@@ -38,25 +38,37 @@ def git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProce
     return proc
 
 
-def prepare(task_dir: Path, out: Path, python: str, verify: bool) -> dict:
+def prepare(task_dir: Path, out: Path, python: str, verify: bool, mirror: str = "") -> dict:
     recipe = json.loads((task_dir / "task.json").read_text(encoding="utf-8"))
     base = recipe["base_sha"]
 
-    if out.exists():
-        # Windows 上 .git 里的对象是只读的，普通 rmtree 会静默半途失败
-        force_rmtree(out)
     out.parent.mkdir(parents=True, exist_ok=True)
+    # 先克隆到旁边，成功后再替换：否则网络一断，原来的工作区就被清空了
+    staging = out.parent / f"{out.name}.cloning"
+    if staging.exists():
+        force_rmtree(staging)
 
-    print(f"  克隆 {recipe['repo']}")
+    source = mirror or recipe["repo"]
+    print(f"  克隆 {source}{'（本地镜像）' if mirror else ''}")
     proc = subprocess.run(
-        ["git", "clone", "--quiet", recipe["repo"], str(out)],
+        ["git", "clone", "--quiet", source, str(staging)],
         capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
     )
     if proc.returncode != 0:
-        raise SystemExit(f"克隆失败：{proc.stderr.strip()[:400]}")
+        if staging.exists():
+            force_rmtree(staging)
+        raise SystemExit(
+            f"克隆失败（原有工作区未受影响）：{proc.stderr.strip()[:400]}\n"
+            "  网络不可用时可用 --mirror 指向本地克隆目录。"
+        )
+
+    if out.exists():
+        # Windows 上 .git 里的对象是只读的，普通 rmtree 会静默半途失败
+        force_rmtree(out)
+    staging.rename(out)
 
     print(f"  切到基线 {base[:10]}")
     # 关掉行尾转换：补丁是按 LF 生成的，工作区若被转成 CRLF，git apply 会失败
@@ -124,6 +136,7 @@ def main() -> int:
     parser.add_argument("--out", default="", help="工作区目录，默认 .work/tasks/<id>")
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument("--no-verify", action="store_true")
+    parser.add_argument("--mirror", default="", help="本地克隆目录；网络不可用时用它代替远程仓库")
     args = parser.parse_args()
 
     task_dir = Path(args.task).resolve()
@@ -133,7 +146,7 @@ def main() -> int:
     print("═" * 68)
     print(f"准备任务：{recipe['id']}  {recipe['title']}")
     print("═" * 68)
-    info = prepare(task_dir, out, args.python, not args.no_verify)
+    info = prepare(task_dir, out, args.python, not args.no_verify, args.mirror)
 
     print("\n" + "─" * 68)
     print(f"工作区  {info['workspace']}")
