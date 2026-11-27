@@ -40,6 +40,6 @@ jobs:
       - name: 契约一致性检查
         run: python scripts/extract_exact.py --check
 
-      # 91 条测试全部用脚本化假适配器，不需要任何 API Key
+      # 测试全部用脚本化假适配器，不需要任何 API Key（具体条数以 pytest 输出为准）
       - name: 单元测试（离线）
         run: python -m pytest -q
