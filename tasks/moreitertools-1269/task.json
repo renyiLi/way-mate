@@ -16,18 +16,18 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "hard",
+  "tier": "medium",
   "solution_note": "上游在 bool/peek 前补了恢复逻辑（5 行）；statement 只描述丢元素。",
   "verified": {
     "red_without_fix": "2 failed, 747 passed, 21165 subtests passed",
     "green_with_fix": "749 passed, 21165 subtests passed"
   },
   "measured": {
-    "date": "2026-11-26",
+    "date": "2026-11-28",
     "provider": "deepseek",
     "model": "deepseek-chat",
-    "passed": 0,
-    "reps": 3,
+    "passed": 2,
+    "reps": 5,
     "backend": "direct"
   }
 }

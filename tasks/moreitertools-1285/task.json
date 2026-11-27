@@ -25,12 +25,11 @@
     "green_with_fix": "758 passed, 21173 subtests passed"
   },
   "measured": {
-    "date": "2026-11-26",
+    "date": "2026-11-28",
     "provider": "deepseek",
     "model": "deepseek-chat",
     "passed": 0,
-    "reps": 3,
-    "backend": "direct",
-    "note": "放宽 diff 上限到 120 后重测；失败原因是 lint 新增问题，此前 2/3 是 diff 上限掩盖了它"
+    "reps": 5,
+    "backend": "direct"
   }
 }

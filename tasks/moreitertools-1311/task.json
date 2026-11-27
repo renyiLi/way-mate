@@ -15,7 +15,7 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "medium",
+  "tier": "hard",
   "solution_note": "上游把 `if key` 改成 `if key is None` 的三元表达式；statement 只描述症状（假值 callable 被忽略），不指出是哪一行判断。",
   "verified": {
     "red_without_fix": "1 failed, 626 passed, 11327 subtests passed",
@@ -23,11 +23,11 @@
     "fix_size": "1 行改写"
   },
   "measured": {
-    "date": "2026-11-26",
+    "date": "2026-11-28",
     "provider": "deepseek",
     "model": "deepseek-chat",
-    "passed": 2,
-    "reps": 3,
+    "passed": 0,
+    "reps": 5,
     "backend": "direct"
   }
 }

@@ -22,11 +22,11 @@
     "fix_size": "1 行"
   },
   "measured": {
-    "date": "2026-11-26",
+    "date": "2026-11-28",
     "provider": "deepseek",
     "model": "deepseek-chat",
-    "passed": 3,
-    "reps": 3,
+    "passed": 5,
+    "reps": 5,
     "backend": "direct"
   }
 }

@@ -22,11 +22,11 @@
     "green_with_fix": "761 passed, 21151 subtests passed"
   },
   "measured": {
-    "date": "2026-11-26",
+    "date": "2026-11-28",
     "provider": "deepseek",
     "model": "deepseek-chat",
     "passed": 0,
-    "reps": 3,
+    "reps": 5,
     "backend": "direct"
   }
 }

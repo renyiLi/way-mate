@@ -2,14 +2,14 @@
   "generated_from": "tasks/*/task.json",
   "task_count": 20,
   "tier_counts": {
-    "medium": 8,
-    "hard": 7,
+    "medium": 9,
+    "hard": 6,
     "easy": 5
   },
   "baseline": {
     "model": "deepseek-chat",
-    "passed": 31,
-    "reps": 60,
+    "passed": 53,
+    "reps": 100,
     "source": "11/26/3"
   },
   "protocol_ladder": {
@@ -66,9 +66,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 2,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 4,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -82,8 +82,8 @@
       "measured": {
         "model": "deepseek-chat",
         "passed": 0,
-        "reps": 3,
-        "date": "2026-11-26"
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -98,9 +98,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 2,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 3,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -114,9 +114,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 3,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 5,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -130,14 +130,14 @@
       "measured": {
         "model": "deepseek-chat",
         "passed": 0,
-        "reps": 3,
-        "date": "2026-11-26"
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
       "id": "moreitertools-1269",
       "title": "seekable 在 maxlen=0 时 bool/peek 会吃掉元素",
-      "tier": "hard",
+      "tier": "medium",
       "repo": "more-itertools",
       "targets": [
         "tests/test_more.py::SeekableTest::test_maxlen_zero_bool_does_not_drop_items",
@@ -145,9 +145,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 0,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 2,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -160,9 +160,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 2,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 3,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -176,9 +176,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 2,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 4,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -195,8 +195,8 @@
       "measured": {
         "model": "deepseek-chat",
         "passed": 0,
-        "reps": 3,
-        "date": "2026-11-26"
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -213,8 +213,8 @@
       "measured": {
         "model": "deepseek-chat",
         "passed": 0,
-        "reps": 3,
-        "date": "2026-11-26"
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -228,8 +228,8 @@
       "measured": {
         "model": "deepseek-chat",
         "passed": 0,
-        "reps": 3,
-        "date": "2026-11-26"
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -243,9 +243,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 3,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 5,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -258,24 +258,24 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 3,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 5,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
       "id": "moreitertools-1311",
       "title": "all_unique 忽略了假值但可调用的 key",
-      "tier": "medium",
+      "tier": "hard",
       "repo": "more-itertools",
       "targets": [
         "tests/test_more.py::AllUniqueTests::test_falsey_key_is_honoured"
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 2,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 0,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -289,9 +289,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 2,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 4,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -305,24 +305,24 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 3,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 5,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
       "id": "tabulate-362",
       "title": "单元格为 True/False/None 时多行包裹报错",
-      "tier": "hard",
+      "tier": "medium",
       "repo": "python-tabulate",
       "targets": [
         "test/test_textwrapper.py::test_wrap_optional_bool_strs"
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 0,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 1,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -335,9 +335,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 3,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 5,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -351,9 +351,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 2,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 4,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     },
     {
@@ -369,9 +369,9 @@
       ],
       "measured": {
         "model": "deepseek-chat",
-        "passed": 2,
-        "reps": 3,
-        "date": "2026-11-26"
+        "passed": 3,
+        "reps": 5,
+        "date": "2026-11-28"
       }
     }
   ]
