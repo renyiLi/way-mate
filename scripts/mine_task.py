@@ -78,24 +78,34 @@ def github_token() -> str:
     return ""
 
 
-def api_base_sha(repo_url: str, pr: int) -> str:
-    """取 PR 声明的 base 提交。拿不到（离线/无 token）就返回空串。"""
-    match = re.search(r"github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?$", repo_url.strip())
-    if not match:
-        return ""
-    owner, name = match.group(1), match.group(2)
+def parse_github_url(repo_url: str) -> tuple[str, str] | None:
+    """从 GitHub URL 里取 (owner, repo)。不是 GitHub 就返回 None。"""
+    url = repo_url.strip().rstrip("/")
+    if url.endswith(".git"):
+        url = url[:-4]
+    match = re.search(r"github\.com[:/]([^/]+)/([^/]+)$", url)
+    return (match.group(1), match.group(2)) if match else None
+
+
+def api_base_sha(repo_url: str, pr: int) -> tuple[str, str]:
+    """取 PR 声明的 base 提交。返回 (sha, 说明)；取不到时 sha 为空串。"""
+    parsed = parse_github_url(repo_url)
+    if not parsed:
+        return "", f"不是 GitHub 仓库（{repo_url[:60]}）"
+    owner, name = parsed
     token = github_token()
-    url = f"https://api.github.com/repos/{owner}/{name}/pulls/{pr}"
+    api = f"https://api.github.com/repos/{owner}/{name}/pulls/{pr}"
     headers = {"User-Agent": "dbw-mine_task", "Accept": "application/vnd.github+json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    request = urllib.request.Request(url, headers=headers)
+    request = urllib.request.Request(api, headers=headers)
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
             payload = json.loads(response.read())
-        return str(payload.get("base", {}).get("sha", ""))
-    except Exception:
-        return ""
+        sha = str(payload.get("base", {}).get("sha", ""))
+        return (sha, "GitHub API") if sha else ("", "API 未返回 base.sha")
+    except Exception as exc:  # noqa: BLE001 离线/限流都只是降级
+        return "", f"API 查询失败（{type(exc).__name__}）"
 
 
 def main() -> int:
@@ -158,16 +168,20 @@ def main() -> int:
     origin_url = git(work, "remote", "get-url", "origin", check=False).strip()
     if not origin_url.startswith("http") and not str(args.repo).startswith("http"):
         origin_url = git(Path(args.repo), "remote", "get-url", "origin", check=False).strip()
-    api_base = api_base_sha(origin_url, args.pr)
+    api_base, api_note = api_base_sha(origin_url, args.pr)
+    has_api_commit = bool(api_base) and subprocess.run(
+        [GIT, "cat-file", "-e", f"{api_base}^{{commit}}"], cwd=str(work), capture_output=True
+    ).returncode == 0
+
     if args.base:
         base = git(work, "rev-parse", args.base).strip()
         source_of_base = "命令行 --base"
-    elif api_base and git(work, "cat-file", "-e", f"{api_base}^{{commit}}", check=False).strip():
+    elif has_api_commit:
         base = api_base
         source_of_base = "PR base.sha（GitHub API）"
     else:
         base = git(work, "merge-base", "HEAD", pr_ref).strip()
-        source_of_base = "merge-base（未取到 PR base.sha，失败用例可能偏多）"
+        source_of_base = f"merge-base（{api_note}；失败用例可能偏多）"
     base_short = base[:10]
     print(f"  base = {base_short}（{source_of_base}）")
 

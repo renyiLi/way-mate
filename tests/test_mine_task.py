@@ -11,7 +11,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from mine_task import parse_failed_nodes  # noqa: E402
+from mine_task import parse_failed_nodes, parse_github_url  # noqa: E402
+
+
+def test_parse_github_url_strips_git_suffix():
+    assert parse_github_url("https://github.com/more-itertools/more-itertools.git") == (
+        "more-itertools",
+        "more-itertools",
+    )
+    assert parse_github_url("https://github.com/astanin/python-tabulate") == (
+        "astanin",
+        "python-tabulate",
+    )
+
+
+def test_parse_github_url_rejects_non_github():
+    assert parse_github_url("C:/Users/x/repo") is None
+    assert parse_github_url("https://gitlab.com/a/b") is None
 
 
 def test_parses_plain_failed_lines():
