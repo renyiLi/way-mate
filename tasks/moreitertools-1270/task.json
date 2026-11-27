@@ -15,7 +15,7 @@
   "forbidden": [
     "tests/"
   ],
-  "tier": "hard",
+  "tier": "medium",
   "solution_note": "上游改 4 行；statement 给出期望语义（不限制），但不给实现方式。",
   "verified": {
     "red_without_fix": "4 failed（均为子测试）, 749 passed",
@@ -25,7 +25,7 @@
     "date": "2026-11-26",
     "provider": "deepseek",
     "model": "deepseek-chat",
-    "passed": 0,
+    "passed": 2,
     "reps": 3,
     "backend": "direct"
   }

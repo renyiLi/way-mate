@@ -1,0 +1,386 @@
+{
+  "generated_from": "tasks/*/task.json",
+  "task_count": 20,
+  "tier_counts": {
+    "medium": 8,
+    "hard": 7,
+    "easy": 5
+  },
+  "baseline": {
+    "model": "deepseek-chat",
+    "passed": 31,
+    "reps": 60,
+    "source": "11/26/3"
+  },
+  "protocol_ladder": {
+    "tasks": [
+      "moreitertools-1270",
+      "moreitertools-1285",
+      "moreitertools-1305",
+      "moreitertools-1342"
+    ],
+    "rows": [
+      {
+        "mode": "single-turn",
+        "label": "单轮（一次调用，无反馈）",
+        "passed": 3,
+        "total": 4,
+        "tokens": "~35000",
+        "source": "11/26/3"
+      },
+      {
+        "mode": "3p.single",
+        "label": "单提案 + 复核 + 反馈轮",
+        "passed": 3,
+        "total": 4,
+        "tokens": "14000-59000",
+        "source": "11/27/2"
+      },
+      {
+        "mode": "3p.dual-same-model",
+        "label": "同模型双提案",
+        "passed": 4,
+        "total": 4,
+        "tokens": "150000-290000",
+        "source": "11/27/1"
+      },
+      {
+        "mode": "3p.dual-cross-model",
+        "label": "跨模型双提案",
+        "passed": 3,
+        "total": 4,
+        "tokens": "160000-290000",
+        "source": "11/27/1"
+      }
+    ],
+    "note": "四条任务各自只跑 1 次，差一条即 25%，不可当通过率引用"
+  },
+  "negative_results": [
+    "多角色协作未观察到增益：四条任务上单轮/3p.single/跨模型双提案都是 3/4",
+    "同模型双提案到 4/4，但 n=1 且成本高 5-10 倍，不足以支撑结论",
+    "复核座位每轮 5-8 条结论全部被丢弃，实际只起触发下一轮的作用",
+    "裁决存在首位偏置：6 次双提案中 5 次选中第一份",
+    "难度不是任务的绝对属性：同一任务换模型或换上下文策略结果会变"
+  ],
+  "tasks": [
+    {
+      "id": "moreitertools-1248",
+      "title": "numeric_range 的包含判断与长度与其迭代结果不一致",
+      "tier": "medium",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::NumericRangeTests::test_contains_items_with_inexact_step",
+        "tests/test_more.py::NumericRangeTests::test_len_matches_iteration"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 2,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1251",
+      "title": "value_chain 吞掉了迭代过程中的 TypeError",
+      "tier": "hard",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::ValueChainTests::test_type_error_while_iterating"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 0,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1253",
+      "title": "maxsplit=0 时 split_* 对空输入多产出一个空列表",
+      "tier": "medium",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::SplitBeforeTest::test_empty_collection",
+        "tests/test_more.py::SplitAfterTest::test_empty_collection",
+        "tests/test_more.py::SplitWhenTests::test_empty_iterable"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 2,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1260",
+      "title": "running_* 配方对非整数窗口与非正索引没有正确拒绝",
+      "tier": "easy",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_recipes.py::RunningWindowSizeTests::test_noninteger_window",
+        "tests/test_recipes.py::RunningWindowSizeTests::test_nonpositive_index"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 3,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1261",
+      "title": "combination_with_replacement_index 把 None 当成了缺失参数",
+      "tier": "hard",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::CombinationWithReplacementIndexTests::test_none_values"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 0,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1269",
+      "title": "seekable 在 maxlen=0 时 bool/peek 会吃掉元素",
+      "tier": "hard",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::SeekableTest::test_maxlen_zero_bool_does_not_drop_items",
+        "tests/test_more.py::SeekableTest::test_maxlen_zero_peek_does_not_drop_items"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 0,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1270",
+      "title": "constrained_batches 对非正上限的处理不符合文档",
+      "tier": "medium",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::ConstrainedBatchesTests::test_nonpositive_max_count"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 2,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1276",
+      "title": "numeric_range 反向迭代把浮点原值算坏了",
+      "tier": "medium",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::NumericRangeTests::test_reversed_datetime_limits",
+        "tests/test_more.py::NumericRangeTests::test_reversed_preserves_float_values"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 2,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1279",
+      "title": "one / only 忽略假值自定义异常，且过早求值 repr",
+      "tier": "hard",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::OneTests::test_falsy_custom_exception",
+        "tests/test_more.py::OneTests::test_too_long_does_not_evaluate_repr",
+        "tests/test_more.py::OnlyTests::test_falsy_custom_exception",
+        "tests/test_more.py::OnlyTests::test_too_long_does_not_evaluate_repr"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 0,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1285",
+      "title": "查询 bucket 会凭空造出不存在的 key",
+      "tier": "hard",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::BucketTests::test_getitem_miss_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key",
+        "tests/test_more.py::BucketTests::test_in_does_not_add_key_with_validator",
+        "tests/test_more.py::BucketTests::test_keys_are_only_those_seen"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 0,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1294",
+      "title": "seekable 不缓存时反复 peek 仍然无限占内存",
+      "tier": "hard",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::SeekableTest::test_repeated_zero_cache_peek_has_bounded_memory"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 0,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1305",
+      "title": "ichunked 对 n=0 与负数的处理与 chunked 不一致",
+      "tier": "easy",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::IchunkedTests::test_negative",
+        "tests/test_more.py::IchunkedTests::test_zero_nonempty"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 3,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1309",
+      "title": "bucket 把假值 validator 替换成了默认校验器",
+      "tier": "easy",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::BucketTests::test_falsey_validator_is_honoured"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 3,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1311",
+      "title": "all_unique 忽略了假值但可调用的 key",
+      "tier": "medium",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::AllUniqueTests::test_falsey_key_is_honoured"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 2,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1322",
+      "title": "peekable 的负步长切片与普通切片不一致",
+      "tier": "medium",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::PeekableTests::test_slicing_negative_step_omitted_stop",
+        "tests/test_more.py::PeekableTests::test_slicing_negative_step_omitted_stop_read_bound"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 2,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "moreitertools-1342",
+      "title": "chunked_even 对非法块大小的处理与 chunked 不一致",
+      "tier": "easy",
+      "repo": "more-itertools",
+      "targets": [
+        "tests/test_more.py::ChunkedEvenTests::test_negative_chunk_size",
+        "tests/test_more.py::ChunkedEvenTests::test_zero_chunk_size"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 3,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "tabulate-362",
+      "title": "单元格为 True/False/None 时多行包裹报错",
+      "tier": "hard",
+      "repo": "python-tabulate",
+      "targets": [
+        "test/test_textwrapper.py::test_wrap_optional_bool_strs"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 0,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "tabulate-366",
+      "title": "github 格式的多行单元格渲染错乱",
+      "tier": "easy",
+      "repo": "python-tabulate",
+      "targets": [
+        "test/test_output.py::test_github_multiline"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 3,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "tabulate-386",
+      "title": "asciidoc 表格的列对齐标记顺序写反",
+      "tier": "medium",
+      "repo": "python-tabulate",
+      "targets": [
+        "test/test_output.py::test_asciidoc",
+        "test/test_output.py::test_asciidoc_headerless"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 2,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    },
+    {
+      "id": "tabulate-410",
+      "title": "github 表格的分隔行缺少对齐冒号",
+      "tier": "medium",
+      "repo": "python-tabulate",
+      "targets": [
+        "test/test_output.py::test_simple_headerless_with_sep_line_with_padding_in_tablefmt",
+        "test/test_output.py::test_github",
+        "test/test_output.py::test_github_multiline",
+        "test/test_output.py::test_github_with_colalign"
+      ],
+      "measured": {
+        "model": "deepseek-chat",
+        "passed": 2,
+        "reps": 3,
+        "date": "2026-11-26"
+      }
+    }
+  ]
+}

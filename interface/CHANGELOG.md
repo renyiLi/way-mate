@@ -47,6 +47,41 @@ runs/patches/<run_id>.json
 `run_end` 里多了一个 `patch_path` 字段指向它。只读文件即可，不需要新接口。
 注意 `runs/` 不入库，前端构建时要允许该文件缺失（旧 run 没有）。
 
+## 2026-11-27 · 新增 · 实验数据快照（给前端做"实验结果"视图）
+
+**影响面**：新增一个可读数据文件，不改动任何既有字段。
+**状态**：已实现。
+
+```
+experiments/summary.json        ← 由 scripts/build_summary.py 生成（请勿手改）
+```
+
+结构：
+
+```json
+{
+  "task_count": 20,
+  "tier_counts": { "easy": 5, "medium": 8, "hard": 7 },
+  "baseline": { "model": "deepseek-chat", "passed": 31, "reps": 60, "source": "11/26/3" },
+  "protocol_ladder": {
+    "tasks": ["moreitertools-1270", "..."],
+    "rows": [ { "mode": "single-turn", "label": "...", "passed": 3, "total": 4, "source": "11/26/3" } ],
+    "note": "四条任务各自只跑 1 次，差一条即 25%，不可当通过率引用"
+  },
+  "negative_results": ["..."],
+  "tasks": [
+    { "id": "tabulate-366", "title": "...", "tier": "easy", "repo": "python-tabulate",
+      "measured": { "model": "deepseek-chat", "passed": 3, "reps": 3, "date": "2026-11-26" } }
+  ]
+}
+```
+
+**渲染注意**：
+
+- `tier` 是 **`deepseek-chat` 的实测档位**，不是"任务的绝对难度"，页面上要标出模型；
+- `protocol_ladder.rows` 的 `total` 只有 4，**不要画成百分比进度条**，直接写 "3/4"；
+- `negative_results` 是给论文用的结论，前端若要展示，请原样引用，不要改写。
+
 ## 前端反馈区
 
 > 前端会话如果发现字段不够用、语义不清、拿不到数据，写在这里，不要自己造字段。

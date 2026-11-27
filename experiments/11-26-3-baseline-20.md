@@ -18,7 +18,7 @@
 | moreitertools-1260 | **3/3** | 13197 | 1543 ms | — |
 | moreitertools-1261 | **0/3** | 16156 | 5126 ms | tests |
 | moreitertools-1269 | **0/3** | 20058 | 8561 ms | 提案不合法 |
-| moreitertools-1270 | **0/3** | 55460 | 1949 ms | tests |
+| moreitertools-1270 | 2/3 | 55460 | 1949 ms | tests |
 | moreitertools-1276 | 2/3 | 43103 | 2195 ms | lint（新增 1 个问题） |
 | moreitertools-1279 | **0/3** | 16009 | 2986 ms | tests + 提案不合法 |
 | moreitertools-1285 | **0/3**（重测） | 59331 / 25451 | 3810 / 3670 ms | lint（新增 2 个问题） |
@@ -29,15 +29,15 @@
 | moreitertools-1322 | 2/3 | 24493 | 2432 ms | tests |
 | moreitertools-1342 | **3/3** | 39996 | 1853 ms | — |
 
-**总通过 33/60（55%）**，用时 288 秒（more-itertools 部分）。
+**总通过 31/60（52%）**，用时 288 秒（more-itertools 部分）。
 
 ## 档位分布（按 3 次实测）
 
 | 档位 | 规则 | 数量 | 任务 |
 |---|---|---|---|
 | 易 | 3/3 | **5** | tabulate-366、moreitertools-1260 / 1305 / 1309 / 1342 |
-| 中 | 1–2/3 | **8** | tabulate-386 / 410、moreitertools-1248 / 1253 / 1276 / 1285 / 1311 / 1322 |
-| 难 | 0/3 | **7** | tabulate-362、moreitertools-1251 / 1261 / 1269 / 1270 / 1279 / 1294 |
+| 中 | 1–2/3 | **8** | tabulate-386 / 410、moreitertools-1248 / 1253 / 1270 / 1276 / 1311 / 1322 |
+| 难 | 0/3 | **7** | tabulate-362、moreitertools-1251 / 1261 / 1269 / 1279 / 1285 / 1294 |
 
 已回写到每条 `task.json` 的 `tier` 与 `measured` 字段。
 

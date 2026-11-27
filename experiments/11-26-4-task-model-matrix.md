@@ -27,7 +27,7 @@ doubao 在这一轮里**明显慢且不稳**：
 | tabulate-362 | 0/3 | ❌ | 都难 |
 | moreitertools-1253 | 2/3 | ✅ | 同 |
 | moreitertools-1260 | 3/3 | ✅ | 同 |
-| moreitertools-1270 | **0/3** | ✅ | **doubao** |
+| moreitertools-1270 | 2/3 | ✅ | 同 |
 | moreitertools-1285 | **0/3** | ✅ | **doubao** |
 | moreitertools-1305 | 3/3 | ❌ | **deepseek** |
 | moreitertools-1342 | 3/3 | ❌ | **deepseek** |
@@ -39,7 +39,7 @@ doubao 在这一轮里**明显慢且不稳**：
 ## 结论
 
 1. **不是"谁更强"，是两条不同的失败曲线。**
-   doubao 在 deepseek 完全做不出的 `1270`、`1285` 上一次成功；
+   doubao 在 deepseek 完全做不出的 `1285` 上一次成功；
    deepseek 在 doubao 失败的 `1305`、`1342` 上三次全过。
    **同一个"难度"标签下，两个模型的失手点几乎不重叠。**
 
