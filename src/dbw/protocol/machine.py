@@ -104,6 +104,7 @@ class RoundRecord:
     gate: dict[str, Any] | None = None
     gate_signature: str | None = None
     note: str = ""
+    chosen: int | None = None  # 双提案时裁决选中了哪一份（0=A，1=B）
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -116,6 +117,7 @@ class RoundRecord:
             "gate": self.gate,
             "gate_signature": self.gate_signature,
             "note": self.note,
+            "chosen": self.chosen,
         }
 
 
@@ -210,6 +212,7 @@ class ProtocolRunner:
         )
         self._seq = 0
         self._feedback: list[str] = []
+        self._last_choice: int | None = None
         self._started_at = time.perf_counter()
 
     # ------------------------------------------------------------ 对外
@@ -246,6 +249,7 @@ class ProtocolRunner:
 
             deliverable, proposals = self._propose(attempt)
             record.proposal_count = proposals
+            record.chosen = self._last_choice
             record.deliverable = self._describe(deliverable)
 
             outcome = self._review(deliverable)
@@ -318,6 +322,7 @@ class ProtocolRunner:
         )
 
         if not self.seats.proposer_b:
+            self._last_choice = None
             return first, 1
 
         second_prompt = base_prompt + "\n\n另一名提案者已独立给出方案，请给出你自己的独立方案（不要参考对方）。"
@@ -327,6 +332,7 @@ class ProtocolRunner:
         )
 
         chosen_index = self._choose(first, second)
+        self._last_choice = chosen_index
         return (first if chosen_index == 0 else second), 2
 
     def _review(self, deliverable: Any) -> ReviewOutcome:

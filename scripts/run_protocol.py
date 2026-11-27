@@ -64,6 +64,7 @@ def main() -> int:
     parser.add_argument("--proposer", default="deepseek/deepseek-chat")
     parser.add_argument("--reviewer", default="ark/kimi-k3-1-pro-261024")
     parser.add_argument("--arbiter", default="", help="留空即 2 人协议")
+    parser.add_argument("--proposer-b", default="", help="第二提案座位；配合 --arbiter 触发双提案")
     parser.add_argument("--rounds", type=int, default=2)
     parser.add_argument("--strip-exact", action="store_true", help="摘掉 exact（制造确定性失败）")
     parser.add_argument("--task", default="", help="任务目录；用真实仓库时指定")
@@ -104,7 +105,15 @@ def main() -> int:
         if arbiter_key not in registry:
             registry.register(arbiter_key, arbiter)
 
-    seats = SeatAssignment(proposer=proposer_key, reviewer=reviewer_key, arbiter=arbiter_key)
+    proposer_b_key = None
+    if args.proposer_b:
+        proposer_b_key, proposer_b = build_adapter(args.proposer_b, settings)
+        if proposer_b_key not in registry:
+            registry.register(proposer_b_key, proposer_b)
+
+    seats = SeatAssignment(
+        proposer=proposer_key, reviewer=reviewer_key, arbiter=arbiter_key, proposer_b=proposer_b_key
+    )
 
     def evaluate(patch, _outcome):
         reset_workspace(work)
@@ -151,6 +160,8 @@ def main() -> int:
             f"阻断 {record.blockers_after_arbitration} · 闸门 {green}"
             + (f"（{', '.join(failed)}）" if failed else "")
         )
+        if record.chosen is not None:
+            print(f"      裁决选中：{'A（提案座位）' if record.chosen == 0 else 'B（第二提案座位）'}")
         for reason in record.dropped[:3]:
             print(f"      备注：{reason}")
 
