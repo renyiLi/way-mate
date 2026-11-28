@@ -64,3 +64,23 @@ def test_to_dict_round_trips_core_fields():
     assert data["task_id"] == contract.task_id
     assert data["doD"]["diff"]["max_lines"] == contract.diff.max_lines
     assert data["doD"]["api"]["frozen"] == list(contract.api.frozen)
+
+
+def test_contract_hash_ignores_location(tmp_path: Path):
+    """同一个契约放在两个目录下，指纹必须相同——repo 是绝对路径，不属于语义。"""
+    import shutil
+
+    from dbw.contract import contract_hash, load_contract
+
+    source = ROOT / "fixtures" / "repo_a" / "contract.yaml"
+    first = tmp_path / "a"
+    second = tmp_path / "b"
+    first.mkdir()
+    second.mkdir()
+    shutil.copyfile(source, first / "contract.yaml")
+    shutil.copyfile(source, second / "contract.yaml")
+
+    left = contract_hash(load_contract(first / "contract.yaml"))
+    right = contract_hash(load_contract(second / "contract.yaml"))
+    assert left == right
+    assert len(left) == 16

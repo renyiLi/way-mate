@@ -252,5 +252,9 @@ def contract_hash(contract: Contract) -> str:
     单轮与协议两条路径都用它，保证"同一份契约"在两处得到同一个值；
     审计把它记进 run_start，论文与附件据此说明"这次运行用的是哪版契约"。
     """
-    raw = json.dumps(contract.to_dict(), ensure_ascii=False, sort_keys=True)
+    payload = contract.to_dict()
+    # repo 是**绝对路径**，随契约文件所在位置变化，不属于契约语义：
+    # 同一份契约放在 tasks/x 与 .work/tasks/x 下必须得到同一个指纹。
+    payload["repo"] = "."
+    raw = json.dumps(payload, ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
