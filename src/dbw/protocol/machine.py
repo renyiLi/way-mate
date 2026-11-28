@@ -10,13 +10,12 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
-from ..contract import Contract
+from ..contract import Contract, contract_hash
 from ..gates import GateReport
 from .base import (
     AdapterError,
@@ -159,11 +158,6 @@ class ProtocolRun:
         }
 
 
-def contract_hash(contract: Contract) -> str:
-    raw = json.dumps(contract.to_dict(), ensure_ascii=False, sort_keys=True)
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
-
-
 class ProtocolRunner:
     """把一次交付跑完：多轮提案、复核、裁决，每轮都过闸门。"""
 
@@ -225,6 +219,7 @@ class ProtocolRunner:
             seats=self.seats.to_dict(),
             interface=self.spec.name,
             protocol=self.seats.protocol().value,
+            contract_hash=self.hash,
         )
         try:
             self._loop()

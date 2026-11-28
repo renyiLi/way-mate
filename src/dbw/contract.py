@@ -6,6 +6,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -242,3 +244,13 @@ def load_contract(path: str | Path) -> Contract:
         source=source,
         exact=tuple(exact_specs),
     )
+
+
+def contract_hash(contract: Contract) -> str:
+    """契约的稳定指纹：对标准化后的字段算 sha256，取前 16 位。
+
+    单轮与协议两条路径都用它，保证"同一份契约"在两处得到同一个值；
+    审计把它记进 run_start，论文与附件据此说明"这次运行用的是哪版契约"。
+    """
+    raw = json.dumps(contract.to_dict(), ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]

@@ -406,3 +406,32 @@ def test_authoring_rejects_forbidden_paths_before_gate():
 def test_get_interface_rejects_unknown_name():
     with pytest.raises(KeyError):
         get_interface("nope")
+
+
+def test_audit_records_contract_hash(tmp_path: Path):
+    """审计的 run_start 必须记录契约哈希，否则论文无法说明每次运行用的哪版契约。"""
+    from dbw.audit import AuditLog
+    from dbw.contract import contract_hash
+
+    log = AuditLog(tmp_path / "audit.jsonl")
+    execute(
+        interface="authoring",
+        task=TASK,
+        seats=SeatAssignment("deepseek", "kimi"),
+        registry=registry(
+            deepseek=ScriptedAdapter("deepseek", [PATCH]),
+            kimi=ScriptedAdapter("kimi", [NO_FINDINGS]),
+        ),
+        evaluate=lambda patch, outcome: gate(True),
+        contract=CONTRACT,
+        audit=log,
+    )
+    log.close()
+
+    events = [
+        json.loads(line)
+        for line in (tmp_path / "audit.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    start = next(event for event in events if event["event"] == "run_start")
+    assert start["contract_hash"] == contract_hash(CONTRACT)

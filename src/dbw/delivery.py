@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import json
-import hashlib
 import os
 import re
 import shutil
@@ -20,7 +19,7 @@ from typing import Any
 
 from .adapters import OpenAICompatAdapter
 from .audit import AuditLog, git_sha
-from .contract import Contract, load_contract
+from .contract import Contract, contract_hash, load_contract
 from .gates import GateReport, lint_baseline, run_all
 from .protocol.base import Capabilities, Message, ModelRequest, extract_json
 from .protocol.interfaces import AuthoringInterface, Patch, render_propose_prompt
@@ -249,9 +248,7 @@ def deliver_once(
     if strip_exact:
         strip_exact_section(work_dir / "contract.yaml")
     contract = load_contract(work_dir / "contract.yaml")
-    result.contract_hash = hashlib.sha256(
-        json.dumps(contract.to_dict(), sort_keys=True, ensure_ascii=False).encode("utf-8")
-    ).hexdigest()[:16]
+    result.contract_hash = contract_hash(contract)
     baseline = lint_baseline(contract, work_dir)
 
     own_audit = audit is None
@@ -267,6 +264,7 @@ def deliver_once(
         provider=provider,
         model=model,
         exact_count=len(contract.exact),
+        contract_hash=result.contract_hash,
         capabilities=capabilities.to_dict(),
     )
 
